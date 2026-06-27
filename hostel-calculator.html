@@ -60,6 +60,25 @@ a{color:var(--ind);text-decoration:none}
 .psec{margin-top:14px;padding-top:14px;border-top:1px solid var(--dv)}
 .pst{font-size:10.5px;font-weight:700;color:var(--tm);letter-spacing:.07em;text-transform:uppercase;margin-bottom:9px}
 
+/* ── 단가 설정 ── */
+.price-table{width:100%;border-collapse:collapse;margin-bottom:16px}
+.price-table th{font-size:10.5px;font-weight:600;color:var(--tm);padding:0 8px 10px;text-align:left;border-bottom:1px solid var(--dv)}
+.price-table th:not(:first-child){text-align:right}
+.price-table tr.pt-row td{padding:8px 8px;border-bottom:1px solid var(--dv)}
+.price-table tr.pt-row:last-child td{border-bottom:none}
+.price-table tr.pt-row.dimmed td{opacity:.35}
+.pt-label{font-size:13px;font-weight:700}
+.pt-wd{text-align:right}
+.pt-we{text-align:right;color:var(--we-c);font-size:13px;font-weight:700}
+.ir-sm{display:inline-flex;align-items:center;border:1.5px solid var(--bd);border-radius:8px;overflow:hidden;transition:border-color .15s;float:right}
+.ir-sm:focus-within{border-color:var(--ind)}
+.ir-sm input{border:none;outline:none;padding:7px 8px;font-size:13px;font-weight:700;font-family:inherit;color:var(--wd-c);background:transparent;width:90px;text-align:right}
+.ir-sm .iu{padding:0 8px 0 2px;font-size:10.5px;color:var(--tm)}
+.mult-row{margin-top:4px}
+.mult-disp{font-size:28px;font-weight:800;color:var(--we-c);letter-spacing:-1px;margin-bottom:4px}
+.mult-sub{font-size:11px;color:var(--ts);margin-bottom:6px}
+.slider-labels{display:flex;justify-content:space-between;font-size:10.5px;color:var(--tm);margin-top:-2px}
+
 /* ── 점유율 슬라이더 ── */
 .occ-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:420px){.occ-grid{grid-template-columns:1fr}}
@@ -186,17 +205,50 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <div class="room-summary" id="room-summary"></div>
 </div>
 
-<!-- ② 1인 단가 설정 -->
+<!-- ② 단가 설정 -->
 <div class="panel">
-  <div class="pt">💰 1인(침대 1개) 단가 설정</div>
-  <div class="igrid">
-    <div class="ig">
-      <label>주중 1인 단가 (월~목·일)</label>
-      <div class="ir"><input type="number" id="wd-price" value="25000" step="1000" oninput="autoCalc()"><span class="iu">원</span></div>
-    </div>
-    <div class="ig">
-      <label>주말 1인 단가 (금·토)</label>
-      <div class="ir"><input type="number" id="we-price" value="35000" step="1000" oninput="autoCalc()"><span class="iu">원</span></div>
+  <div class="pt">💰 객실 주중 단가 (1박 기준)</div>
+  <table class="price-table">
+    <thead>
+      <tr>
+        <th>객실 유형</th>
+        <th>주중 단가 (1박)</th>
+        <th>주말 단가 (계산)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="pt-row" id="ptr-4">
+        <td class="pt-label">🛏 4인실</td>
+        <td class="pt-wd">
+          <div class="ir-sm"><input type="number" id="wd4" value="80000" step="5000" oninput="updateWePrices();autoCalc()"><span class="iu">원</span></div>
+        </td>
+        <td class="pt-we" id="we4-disp">—</td>
+      </tr>
+      <tr class="pt-row" id="ptr-6">
+        <td class="pt-label">🛏 6인실</td>
+        <td class="pt-wd">
+          <div class="ir-sm"><input type="number" id="wd6" value="110000" step="5000" oninput="updateWePrices();autoCalc()"><span class="iu">원</span></div>
+        </td>
+        <td class="pt-we" id="we6-disp">—</td>
+      </tr>
+      <tr class="pt-row" id="ptr-8">
+        <td class="pt-label">🛏 8인실</td>
+        <td class="pt-wd">
+          <div class="ir-sm"><input type="number" id="wd8" value="140000" step="5000" oninput="updateWePrices();autoCalc()"><span class="iu">원</span></div>
+        </td>
+        <td class="pt-we" id="we8-disp">—</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="psec">
+    <div class="pst">주말 단가 배율 (금·토)</div>
+    <div class="mult-row">
+      <div class="mult-disp" id="mult-disp">1.30×</div>
+      <div class="mult-sub" id="mult-sub">주중 단가의 1.30배 적용</div>
+      <input type="range" id="we-mult" min="1.0" max="3.0" step="0.05" value="1.30"
+        oninput="updateWePrices();autoCalc()">
+      <div class="slider-labels"><span>1.0×</span><span>1.5×</span><span>2.0×</span><span>2.5×</span><span>3.0×</span></div>
     </div>
   </div>
 </div>
@@ -322,6 +374,22 @@ const WE_NIGHTS = 8.70;  // 2/7 × 30.44
 const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
 const pct = (n, d) => (n / d * 100).toFixed(1) + '%';
 
+// ── 주말 단가 표시 업데이트 ──
+function updateWePrices() {
+  const mult = +document.getElementById('we-mult').value || 1.3;
+  document.getElementById('mult-disp').textContent = mult.toFixed(2) + '×';
+  document.getElementById('mult-sub').textContent = `주중 단가의 ${mult.toFixed(2)}배 적용`;
+  [4, 6, 8].forEach(t => {
+    const wd = +document.getElementById('wd' + t).value || 0;
+    const we = Math.round(wd * mult);
+    document.getElementById('we' + t + '-disp').textContent = we ? won(we) : '—';
+  });
+  // 비활성 객실은 흐리게
+  [4, 6, 8].forEach(t => {
+    document.getElementById('ptr-' + t).className = 'pt-row' + (rooms[t] === 0 ? ' dimmed' : '');
+  });
+}
+
 // ── 객실 UI ──
 function changeRoom(type, d) {
   rooms[type] = Math.max(0, Math.min(10, rooms[type] + d));
@@ -338,6 +406,7 @@ function updateRoomUI() {
     num.className = 'rc-num' + (v === 0 ? ' zero' : '');
     card.className = 'room-card' + (v === 0 ? ' zero' : ' active');
   });
+  updateWePrices();
   const n4 = rooms[4], n6 = rooms[6], n8 = rooms[8];
   const totalRooms = n4 + n6 + n8;
   const totalBeds = n4 * 4 + n6 * 6 + n8 * 8;
@@ -447,8 +516,9 @@ function calculate() {
   const totalRooms = n4 + n6 + n8;
   if (!totalRooms) { alert('객실을 최소 1개 이상 선택해주세요.'); return; }
 
-  const wdP = +v('wd-price') || 0;
-  const weP = +v('we-price') || 0;
+  const mult = +v('we-mult') || 1.3;
+  const wd4P = +v('wd4') || 0, wd6P = +v('wd6') || 0, wd8P = +v('wd8') || 0;
+  const we4P = wd4P * mult,    we6P = wd6P * mult,    we8P = wd8P * mult;
   const wdO = +v('occ-wd') / 100;
   const weO = +v('occ-we') / 100;
   const fee = getEffFee();
@@ -465,13 +535,13 @@ function calculate() {
   };
   const totalCostMo = Object.values(costs).reduce((a, b) => a + b, 0);
 
-  // 객실별 월 매출
-  const rev = beds => ({
-    wd: beds * wdP * wdO * WD_NIGHTS,
-    we: beds * weP * weO * WE_NIGHTS,
+  // 객실별 월 매출 (1실 기준)
+  const rev = (wdP, weP) => ({
+    wd: wdP * wdO * WD_NIGHTS,
+    we: weP * weO * WE_NIGHTS,
     get total() { return this.wd + this.we; },
   });
-  const r4 = rev(4), r6 = rev(6), r8 = rev(8);
+  const r4 = rev(wd4P, we4P), r6 = rev(wd6P, we6P), r8 = rev(wd8P, we8P);
   const totalBeds = n4*4 + n6*6 + n8*8;
 
   const grossMo = r4.total*n4 + r6.total*n6 + r8.total*n8;
@@ -537,20 +607,26 @@ function calculate() {
   <div class="rb-grid">
     ${n4 > 0 ? `<div class="rb-card">
       <div class="rb-type">4인실 <span class="rb-badge">${n4}개 · 침대 ${n4*4}개</span></div>
-      <div class="li"><span class="ll">주중 (점유율 ${Math.round(wdO*100)}%)</span><span class="lv wd">${won(r4.wd*n4)}</span></div>
-      <div class="li"><span class="ll">주말 (점유율 ${Math.round(weO*100)}%)</span><span class="lv wn">${won(r4.we*n4)}</span></div>
+      <div class="li"><span class="ll">주중 단가</span><span class="lv wd">${won(wd4P)} / 박</span></div>
+      <div class="li"><span class="ll">주말 단가 (×${mult.toFixed(2)})</span><span class="lv wn">${won(we4P)} / 박</span></div>
+      <div class="li"><span class="ll">주중 매출 (점유율 ${Math.round(wdO*100)}%)</span><span class="lv">${won(r4.wd*n4)}</span></div>
+      <div class="li"><span class="ll">주말 매출 (점유율 ${Math.round(weO*100)}%)</span><span class="lv">${won(r4.we*n4)}</span></div>
       <div class="li total"><span class="ll">4인실 소계</span><span class="lv">${won(r4.total*n4)}</span></div>
     </div>` : ''}
     ${n6 > 0 ? `<div class="rb-card">
       <div class="rb-type">6인실 <span class="rb-badge">${n6}개 · 침대 ${n6*6}개</span></div>
-      <div class="li"><span class="ll">주중 (점유율 ${Math.round(wdO*100)}%)</span><span class="lv wd">${won(r6.wd*n6)}</span></div>
-      <div class="li"><span class="ll">주말 (점유율 ${Math.round(weO*100)}%)</span><span class="lv wn">${won(r6.we*n6)}</span></div>
+      <div class="li"><span class="ll">주중 단가</span><span class="lv wd">${won(wd6P)} / 박</span></div>
+      <div class="li"><span class="ll">주말 단가 (×${mult.toFixed(2)})</span><span class="lv wn">${won(we6P)} / 박</span></div>
+      <div class="li"><span class="ll">주중 매출 (점유율 ${Math.round(wdO*100)}%)</span><span class="lv">${won(r6.wd*n6)}</span></div>
+      <div class="li"><span class="ll">주말 매출 (점유율 ${Math.round(weO*100)}%)</span><span class="lv">${won(r6.we*n6)}</span></div>
       <div class="li total"><span class="ll">6인실 소계</span><span class="lv">${won(r6.total*n6)}</span></div>
     </div>` : ''}
     ${n8 > 0 ? `<div class="rb-card">
       <div class="rb-type">8인실 <span class="rb-badge">${n8}개 · 침대 ${n8*8}개</span></div>
-      <div class="li"><span class="ll">주중 (점유율 ${Math.round(wdO*100)}%)</span><span class="lv wd">${won(r8.wd*n8)}</span></div>
-      <div class="li"><span class="ll">주말 (점유율 ${Math.round(weO*100)}%)</span><span class="lv wn">${won(r8.we*n8)}</span></div>
+      <div class="li"><span class="ll">주중 단가</span><span class="lv wd">${won(wd8P)} / 박</span></div>
+      <div class="li"><span class="ll">주말 단가 (×${mult.toFixed(2)})</span><span class="lv wn">${won(we8P)} / 박</span></div>
+      <div class="li"><span class="ll">주중 매출 (점유율 ${Math.round(wdO*100)}%)</span><span class="lv">${won(r8.wd*n8)}</span></div>
+      <div class="li"><span class="ll">주말 매출 (점유율 ${Math.round(weO*100)}%)</span><span class="lv">${won(r8.we*n8)}</span></div>
       <div class="li total"><span class="ll">8인실 소계</span><span class="lv">${won(r8.total*n8)}</span></div>
     </div>` : ''}
   </div>
@@ -630,6 +706,7 @@ function calculate() {
 
 // ── 초기화 ──
 updateRoomUI();
+updateWePrices();
 </script>
 </body>
 </html>
