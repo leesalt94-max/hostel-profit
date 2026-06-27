@@ -570,6 +570,11 @@
         📊 연간 세후 순수익 추정
         <span class="ah-sub">월 수익 × 12개월 기준</span>
       </div>
+      <!-- 연간 매출 강조 배지 -->
+      <div style="padding: 14px 16px; background: #EAF2FF; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 13px; font-weight: 700; color: var(--accent-wd);">📈 연간 예상 총 매출액</span>
+        <span style="font-size: 22px; font-weight: 800; color: var(--accent-wd); letter-spacing: -0.5px;" id="an-gross-highlight">—</span>
+      </div>
       <div class="annual-platform-tab">
         <button class="apt-btn on" id="apt-ab" onclick="setAnnualTab('ab')">에어비앤비</button>
         <button class="apt-btn" id="apt-bk" onclick="setAnnualTab('bk')">부킹닷컴</button>
@@ -731,6 +736,10 @@ table.sim-table td.c-top  { background: #2D5A2D; color: #fff; }
     <div class="modal-platform-row">
       <button class="modal-platform-btn on" id="sim-tab-ab" onclick="setSimTab('ab')">에어비앤비</button>
       <button class="modal-platform-btn" id="sim-tab-bk" onclick="setSimTab('bk')">부킹닷컴</button>
+    </div>
+    <div class="modal-platform-row" style="border-top: 1px solid var(--border); background: #fafafa;">
+      <button class="modal-platform-btn on" id="sim-mode-profit" onclick="setSimMode('profit')">💰 세후 순수익 추정</button>
+      <button class="modal-platform-btn" id="sim-mode-gross" onclick="setSimMode('gross')">📈 총 매출액 추정</button>
     </div>
     <div class="sim-table-wrap">
       <table class="sim-table" id="sim-table"></table>
@@ -1241,6 +1250,7 @@ function calcAnnual() {
   const afterTax  = preTax - totalTax;
 
   // ── UI 업데이트 ─────────────────────────────────
+  document.getElementById('an-gross-highlight').textContent = won(annualGross);
   document.getElementById('an-gross').textContent      = won(annualGross);
   document.getElementById('an-fee').textContent        = '-' + won(annualFee);
   document.getElementById('an-cost').textContent       = '-' + won(annualCost);
@@ -1301,7 +1311,19 @@ function setSimTab(t) {
 }
 
 // 단일 시나리오 연간 세후순수익 계산 (공통 설정 재사용)
-function calcScenarioAfterTax(wdPrice, totalNights, platform) {
+// ── 추정표 관련 모드 상태 ──
+let simPlatform = 'ab';
+let simMode = 'profit'; // 'profit' | 'gross'
+
+function setSimMode(m) {
+  simMode = m;
+  document.getElementById('sim-mode-profit').classList.toggle('on', m === 'profit');
+  document.getElementById('sim-mode-gross').classList.toggle('on', m === 'gross');
+  buildSimTable();
+}
+
+// 단일 시나리오 연간 계산 (매출 또는 세후순수익)
+function calcScenario(wdPrice, totalNights, platform, mode) {
   const fee = platform === 'ab' ? AB : BK;
 
   // 주중:주말 = 11:4 비율
@@ -1317,11 +1339,17 @@ function calcScenarioAfterTax(wdPrice, totalNights, platform) {
   // 할인
   const discMult = 1 - getTotalDisc() / 100;
   const gross = (wdPrice * discMult * wdN + weP * discMult * weN);
+  
+  // 연간 총매출
+  const annualGross = gross * 12;
+  if (mode === 'gross') {
+    return annualGross;
+  }
+
   const feeAmt = gross * fee;
   const net = gross - feeAmt;  // 호스트 실수령 (월)
 
   // 연간
-  const annualGross = gross * 12;
   const annualFee   = feeAmt * 12;
   const annualNet   = net * 12;
   const annualCost  = getCostTotal() * 12;
@@ -1382,7 +1410,7 @@ function buildSimTable() {
   }
 
   // 모든 셀 값 계산
-  const values = nights.map(n => prices.map(p => calcScenarioAfterTax(p, n, simPlatform)));
+  const values = nights.map(n => prices.map(p => calcScenario(p, n, simPlatform, simMode)));
   const allVals = values.flat();
   const minV = Math.min(...allVals);
   const maxV = Math.max(...allVals);
@@ -1433,8 +1461,9 @@ function buildSimTable() {
   // 메타 정보
   const feeLabel = simPlatform === 'ab' ? '에어비앤비 15.5%' : '부킹닷컴 17.5%';
   const taxLabel = taxType === 'simple' ? '간이과세' : '일반과세';
+  const modeLabel = simMode === 'profit' ? '세후 순수익' : '총 매출액';
   document.getElementById('sim-meta').innerHTML =
-    `플랫폼: <b>${feeLabel}</b> · 과세: <b>${taxLabel}</b> · 주중:주말 <b>11:4</b> 비율<br>` +
+    `플랫폼: <b>${feeLabel}</b> · 과세: <b>${taxLabel}</b> · 지표: <b style="color: #1d6fcc;">${modeLabel}</b> · 주중:주말 <b>11:4</b> 비율<br>` +
     `현재 단가 <b>${(baseWdPrice/10000).toFixed(0)}만원</b> · 현재 운영 <b>${baseTotalNights}박</b> (■ 강조셀)`;
 }
 
