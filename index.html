@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>숙박 수익 계산기</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+  :root {
+    --bg: #F7F6F3; --surface: #FFFFFF; --border: rgba(0,0,0,0.08);
+    --text: #1A1A1A; --muted: #888;
+    --accent-wd: #1D6FCC; --accent-we: #C87E00;
+    --radius: 14px; --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 20px 14px; position: sticky; top: 0; z-index: 10; }
+  header h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  header p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  main { padding: 16px; max-width: 480px; margin: 0 auto; }
+  section { margin-bottom: 16px; }
+  .card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; margin-bottom: 12px; }
+  .card-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+  .field input[type=number], .field input[type=month] {
+    width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 16px; font-family: inherit; color: var(--text); background: var(--bg);
+    outline: none; transition: border-color 0.15s; -webkit-appearance: none;
+  }
+  .field input:focus { border-color: #999; background: #fff; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .price-input-wrap { position: relative; }
+  .price-input-wrap input { font-size: 22px !important; font-weight: 700; padding-right: 40px !important; letter-spacing: -0.5px; }
+  .price-unit { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--muted); pointer-events: none; }
+  .we-tabs { display: flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 12px; }
+  .we-tab { flex: 1; padding: 9px 0; font-size: 13px; font-family: inherit; text-align: center; border: none; background: transparent; color: var(--muted); cursor: pointer; font-weight: 500; }
+  .we-tab.on { background: var(--text); color: #fff; }
+  .slider-wrap { padding: 4px 0; }
+  input[type=range] { width: 100%; height: 36px; -webkit-appearance: none; background: transparent; cursor: pointer; }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; background: #E0DDD8; border-radius: 2px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: var(--text); margin-top: -10px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+  .slider-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: -2px; }
+  .mult-big { font-size: 26px; font-weight: 700; letter-spacing: -1px; margin-bottom: 4px; }
+  .we-badge { display: flex; justify-content: space-between; align-items: center; background: #FFF3D0; border-radius: var(--radius-sm); padding: 10px 14px; margin-top: 10px; }
+  .we-badge .wb-label { font-size: 12px; color: var(--accent-we); font-weight: 500; }
+  .we-badge .wb-val { font-size: 20px; font-weight: 700; color: var(--accent-we); letter-spacing: -0.5px; }
+  .we-badge .wb-mult { font-size: 11px; color: var(--accent-we); opacity: 0.7; margin-top: 1px; text-align: right; }
+
+  /* 예약일수 입력 */
+  .nights-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .nights-box { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; background: var(--bg); }
+  .nights-box label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px; font-weight: 500; }
+  .nights-box .nb-row { display: flex; align-items: baseline; gap: 4px; }
+  .nights-box input { flex: 1; min-width: 0; border: none; background: transparent; font-size: 32px; font-weight: 700; font-family: inherit; color: var(--text); outline: none; -webkit-appearance: none; width: 100%; }
+  .nights-box input.wd-color { color: var(--accent-wd); }
+  .nights-box input.we-color { color: var(--accent-we); }
+  .nights-box .nb-unit { font-size: 15px; color: var(--muted); font-weight: 500; flex-shrink: 0; }
+
+  /* 캘린더 */
+  .cal-section { margin-bottom: 0; }
+  .cal-header-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .cal-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .month-nav { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+  .month-btn { width: 40px; height: 40px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-size: 22px; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; line-height: 1; }
+  .month-pick-input { flex: 1; height: 40px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-size: 15px; font-weight: 700; font-family: inherit; color: var(--text); text-align: center; outline: none; padding: 0 8px; -webkit-appearance: none; }
+  .cal-clear-btn { font-size: 11px; color: var(--muted); background: none; border: none; cursor: pointer; padding: 0; text-decoration: underline; font-family: inherit; }
+  .cal-hint { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .cal-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .cal-count { border-radius: var(--radius-sm); padding: 12px 14px; }
+  .cal-count.wd { background: #EAF2FF; }
+  .cal-count.we { background: #FFF3D0; }
+  .cal-count .cc-label { font-size: 12px; color: var(--muted); margin-bottom: 2px; font-weight: 500; }
+  .cal-count .cc-val { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .cal-count.wd .cc-val { color: var(--accent-wd); }
+  .cal-count.we .cc-val { color: var(--accent-we); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-head { font-size: 10px; text-align: center; color: var(--muted); padding: 2px 0 5px; font-weight: 500; }
+  .cal-head.sun { color: #C94040; }
+  .cal-head.sat { color: var(--accent-we); }
+  .cal-cell { font-size: 12px; text-align: center; padding: 8px 2px; border-radius: 6px; font-weight: 500; cursor: pointer; user-select: none; transition: transform 0.08s; }
+  .cal-cell:active { transform: scale(0.85); }
+  .cal-cell.empty { background: transparent; cursor: default; pointer-events: none; }
+  .cal-cell.wd-open { background: #EAF2FF; color: var(--accent-wd); }
+  .cal-cell.we-open { background: #FFF3D0; color: var(--accent-we); }
+  .cal-cell.wd-booked { background: var(--accent-wd); color: #fff; }
+  .cal-cell.we-booked { background: var(--accent-we); color: #fff; }
+
+  /* 결과 */
+  .result-card { background: var(--surface); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; border: 1px solid var(--border); }
+  .result-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .platform-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .result-header span { font-size: 13px; font-weight: 700; }
+  .result-header .fee-badge { margin-left: auto; font-size: 11px; color: var(--muted); background: var(--bg); padding: 3px 8px; border-radius: 20px; }
+  .price-pair { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+  .price-cell { padding: 10px 16px; border-right: 1px solid var(--border); }
+  .price-cell:last-child { border-right: none; }
+  .price-cell .pc-label { font-size: 11px; color: var(--muted); margin-bottom: 2px; font-weight: 500; }
+  .price-cell .pc-val { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+  .pc-val.wd { color: var(--accent-wd); }
+  .pc-val.we { color: var(--accent-we); }
+  .detail-rows { padding: 0 16px 4px; }
+  .detail-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .dr-label { color: var(--muted); }
+  .result-footer { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; background: var(--bg); }
+  .result-footer .rf-label { font-size: 12px; color: var(--muted); }
+  .result-footer .rf-val { font-size: 20px; font-weight: 700; }
+  .rf-val.ab-color { color: #D04448; }
+  .rf-val.bk-color { color: #003580; }
+  /* 등록단가 강조 */
+  .reg-price-box { background: var(--bg); border-bottom: 1px solid var(--border); padding: 12px 16px; }
+  .reg-price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .reg-price-row:last-child { margin-bottom: 0; }
+  .reg-price-tag { font-size: 11px; color: var(--muted); font-weight: 500; }
+  .reg-price-val { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+  .reg-price-val.wd { color: var(--accent-wd); }
+  .reg-price-val.we { color: var(--accent-we); }
+  .disc-arrow { font-size: 11px; color: #E24B4A; margin: 0 4px; }
+  .disc-after { font-size: 13px; color: #A32D2D; font-weight: 500; }
+  /* 할인율 */
+  .disc-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 8px; display: block; }
+  .disc-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .disc-chip { padding: 8px 16px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; font-weight: 700; font-family: inherit; background: var(--bg); color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; }
+  .disc-chip.on { background: #FFF0F0; border-color: #E24B4A; color: #A32D2D; }
+  .disc-total { margin-top: 10px; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+  .disc-total .dt-val { font-size: 15px; font-weight: 700; color: #A32D2D; }
+  .disc-preview { background: #FFF0F0; border-radius: var(--radius-sm); padding: 10px 14px; margin-top: 10px; display: none; }
+  .disc-preview.show { display: block; }
+  .disc-preview .dp-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .disc-preview .dp-row:last-child { margin-bottom: 0; font-weight: 700; }
+  .disc-preview .dp-label { color: var(--muted); }
+  .tip-box { background: #FFF8E7; border: 1px solid #F0D080; border-radius: var(--radius-sm); padding: 12px 14px; font-size: 12px; color: #7A5A00; line-height: 1.6; margin-bottom: 12px; }
+
+  .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  footer { text-align: center; padding: 24px 16px 40px; font-size: 11px; color: var(--muted); }
+
+  /* 비용 섹션 */
+  .cost-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; margin-bottom: 12px; }
+  .cost-field { margin-bottom: 10px; }
+  .cost-field:last-child { margin-bottom: 0; }
+  .cost-field label { display: block; font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 5px; }
+  .cost-input-wrap { position: relative; width: 100%; }
+  .cost-input-wrap input { width: 100%; padding: 9px 36px 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; font-family: inherit; color: var(--text); background: var(--bg); outline: none; -webkit-appearance: none; text-align: right; }
+  .cost-input-wrap input:focus { border-color: #999; background: #fff; }
+  .cost-unit { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--muted); pointer-events: none; }
+  .cost-total-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 0; border-top: 1.5px solid var(--border); margin-top: 12px; }
+  .cost-total-label { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .cost-total-val { font-size: 18px; font-weight: 700; color: #D04448; }
+
+  /* 순수익 결과 */
+  .profit-card { border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; border: 2px solid #1A1A1A; background: var(--surface); }
+  .profit-header { background: #1A1A1A; color: #fff; padding: 12px 16px; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .profit-header .ph-sub { font-size: 11px; font-weight: 400; opacity: 0.6; margin-left: auto; }
+  .profit-body { padding: 0 16px 4px; }
+  .profit-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .profit-row:last-child { border-bottom: none; }
+  .profit-row .pr-label { color: var(--muted); }
+  .profit-row .pr-val { font-weight: 700; }
+  .profit-row.minus .pr-val { color: #D04448; }
+  .profit-footer { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .profit-footer .pf-label { font-size: 13px; font-weight: 700; }
+  .profit-footer .pf-val { font-size: 26px; font-weight: 700; letter-spacing: -1px; }
+  .pf-val.positive { color: #1A7A3C; }
+  .pf-val.negative { color: #D04448; }
+  .profit-compare { display: grid; grid-template-columns: 1fr 1fr; border-top: 1.5px solid var(--border); }
+  .pc-col { padding: 12px 16px; }
+  .pc-col:first-child { border-right: 1px solid var(--border); }
+  .pc-col .pcc-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+  .pc-col .pcc-val { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+  .pcc-val.positive { color: #1A7A3C; }
+  .pcc-val.negative { color: #D04448; }
+
+  /* 세금 섹션 */
+  .tax-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; margin-bottom: 12px; }
+  .tax-type-tabs { display: flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .tax-type-tab { flex: 1; padding: 9px 0; font-size: 13px; font-family: inherit; text-align: center; border: none; background: transparent; color: var(--muted); cursor: pointer; font-weight: 500; line-height: 1.3; }
+  .tax-type-tab.on { background: var(--text); color: #fff; }
+  .exp-method-tabs { display: flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 10px; }
+  .exp-method-tab { flex: 1; padding: 8px 0; font-size: 12px; font-family: inherit; text-align: center; border: none; background: transparent; color: var(--muted); cursor: pointer; font-weight: 500; }
+  .exp-method-tab.on { background: #4A4A4A; color: #fff; }
+  .tax-info-box { background: #F0F4FF; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 11px; color: #3A4A7A; line-height: 1.7; margin-bottom: 10px; }
+  .tax-info-box b { font-weight: 700; }
+  .std-exp-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; }
+  .std-exp-val { font-weight: 700; color: #1D6FCC; font-size: 15px; }
+  .ref-exp-field { margin-bottom: 8px; }
+  .ref-exp-field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+  .ref-exp-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ref-exp-inputs .cost-input-wrap { width: 100%; }
+  .deduction-field { margin-top: 10px; }
+  .deduction-field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+
+  /* 연간 수익 카드 */
+  .annual-card { border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; border: 2px solid #2D5A2D; background: var(--surface); }
+  .annual-header { background: #2D5A2D; color: #fff; padding: 12px 16px; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .annual-header .ah-sub { font-size: 11px; font-weight: 400; opacity: 0.65; margin-left: auto; }
+  .annual-platform-tab { display: flex; border-bottom: 1px solid var(--border); }
+  .apt-btn { flex: 1; padding: 10px 0; font-size: 13px; font-weight: 700; font-family: inherit; border: none; background: transparent; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .apt-btn.on { color: var(--text); border-bottom-color: #2D5A2D; }
+  .annual-body { padding: 0 16px 4px; }
+  .annual-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .annual-row:last-child { border-bottom: none; }
+  .annual-row .ar-label { color: var(--muted); flex: 1; }
+  .annual-row .ar-val { font-weight: 700; text-align: right; }
+  .annual-row.minus .ar-val { color: #D04448; }
+  .annual-row.tax-row .ar-val { color: #7A3A00; }
+  .annual-divider { height: 1px; background: var(--border); margin: 4px 0; }
+  .annual-footer { padding: 14px 16px; background: #F0F7F0; display: flex; justify-content: space-between; align-items: center; border-top: 1.5px solid #2D5A2D; }
+  .annual-footer .af-label { font-size: 13px; font-weight: 700; }
+  .annual-footer .af-val { font-size: 26px; font-weight: 700; letter-spacing: -1px; }
+  .af-val.positive { color: #1A7A3C; }
+  .af-val.negative { color: #D04448; }
+  .tax-bracket-box { margin: 8px 16px 12px; background: #FFF8F0; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 11px; color: #7A5A00; line-height: 1.7; border: 1px solid #F0D080; }
+  .tax-bracket-box b { font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <h1>숙박 수익 계산기</h1>
+  <p>단가 입력 → 플랫폼별 실수령 확인</p>
+</header>
+<main>
+  <section>
+    <div class="card">
+      <div class="card-title">단가 설정</div>
+      <div class="field">
+        <label>주중 1박 단가 (원)</label>
+        <div class="price-input-wrap">
+          <input type="number" id="wd-price" value="100000" step="1000" inputmode="numeric" oninput="onWdChange()" />
+          <span class="price-unit">원</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>주말 단가 입력 방식 (금·토 기준)</label>
+        <div class="we-tabs">
+          <button class="we-tab on" id="tab-mult" onclick="setWeMode('mult')">배율로 설정</button>
+          <button class="we-tab" id="tab-direct" onclick="setWeMode('direct')">직접 입력</button>
+        </div>
+        <div id="mode-mult">
+          <div class="mult-big" id="mult-display">1.30×</div>
+          <div class="slider-wrap">
+            <input type="range" id="mult" min="1.0" max="3.0" step="0.05" value="1.3" oninput="onMultChange()" />
+            <div class="slider-labels"><span>1.0×</span><span>1.5×</span><span>2.0×</span><span>2.5×</span><span>3.0×</span></div>
+          </div>
+          <div class="we-badge">
+            <div><div class="wb-label">주말 1박 단가</div><div class="wb-val" id="we-badge-mult">—</div></div>
+            <div class="wb-mult" id="we-badge-ratio">주중의 1.30배</div>
+          </div>
+        </div>
+        <div id="mode-direct" style="display:none;">
+          <div class="price-input-wrap" style="margin-bottom:10px;">
+            <input type="number" id="we-price-direct" value="104000" step="1000" inputmode="numeric" oninput="onWeDirectChange()" />
+            <span class="price-unit">원</span>
+          </div>
+          <div class="we-badge">
+            <div><div class="wb-label">주중 대비 배율</div><div class="wb-val" id="we-badge-direct-mult" style="color:var(--accent-wd);">—</div></div>
+            <div class="wb-mult" id="we-badge-direct-diff" style="color:var(--accent-wd);">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">할인율 적용</div>
+      <span class="disc-label">중복 선택 가능 · 선택한 할인율이 순차 적용됩니다</span>
+      <div class="disc-chips">
+        <button class="disc-chip" id="disc5" onclick="toggleDisc(5)">5% 할인</button>
+        <button class="disc-chip" id="disc10" onclick="toggleDisc(10)">10% 할인</button>
+        <button class="disc-chip" id="disc-custom-btn" onclick="toggleDiscCustom()">직접 입력</button>
+      </div>
+      <div id="disc-custom-wrap" style="display:none; margin-top:10px;">
+        <div style="position:relative;">
+          <input type="number" id="disc-custom" value="0" min="0" max="99" step="1" inputmode="numeric" oninput="updateDiscUI();calc()" style="width:100%;padding:11px 36px 11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:20px;font-weight:700;font-family:inherit;color:var(--text);background:var(--bg);outline:none;-webkit-appearance:none;" />
+          <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);pointer-events:none;">%</span>
+        </div>
+      </div>
+      <div class="disc-total" id="disc-total-row" style="display:none;">
+        <span>적용 할인율 합계</span>
+        <span class="dt-val" id="disc-total-val">0%</span>
+      </div>
+      <div class="disc-preview" id="disc-preview">
+        <div class="dp-row"><span class="dp-label">주중 단가 (할인 후)</span><span id="dp-wd">—</span></div>
+        <div class="dp-row"><span class="dp-label">주말 단가 (할인 후)</span><span id="dp-we">—</span></div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:16px 12px;">
+      <div class="card-title" style="padding:0 4px;">예약 일수 & 달력</div>
+
+      <!-- 숫자 입력 -->
+      <div class="nights-row">
+        <div class="nights-box">
+          <label>주중 예약 (월~목)</label>
+          <div class="nb-row">
+            <input type="number" id="wd-nights" class="wd-color" value="15" min="0" inputmode="numeric" oninput="onNightsInput('wd')" />
+            <span class="nb-unit">박</span>
+          </div>
+        </div>
+        <div class="nights-box">
+          <label>주말 예약 (금·토)</label>
+          <div class="nb-row">
+            <input type="number" id="we-nights" class="we-color" value="6" min="0" inputmode="numeric" oninput="onNightsInput('we')" />
+            <span class="nb-unit">박</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 달력 -->
+      <div class="cal-section">
+        <div class="cal-header-row">
+          <div class="cal-title" id="cal-label">이번 달 캘린더</div>
+          <button class="cal-clear-btn" onclick="clearAll()">초기화</button>
+        </div>
+        <div class="month-nav">
+          <button class="month-btn" onclick="shiftMonth(-1)">&#8249;</button>
+          <input type="month" id="month-pick" class="month-pick-input" oninput="onMonthChange()" />
+          <button class="month-btn" onclick="shiftMonth(1)">&#8250;</button>
+        </div>
+        <p class="cal-hint">위 숫자 입력 → 앞 날짜부터 자동 채움 &nbsp;|&nbsp; 날짜 탭 → 개별 on/off</p>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent-wd)"></div>예약 주중</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent-we)"></div>예약 주말</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#EAF2FF"></div>공실 주중</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#FFF3D0"></div>공실 주말</div>
+        </div>
+        <div class="cal-counts">
+          <div class="cal-count wd"><div class="cc-label">주중 예약</div><div class="cc-val"><span id="count-wd">0</span>박</div></div>
+          <div class="cal-count we"><div class="cc-label">주말 예약</div><div class="cc-val"><span id="count-we">0</span>박</div></div>
+        </div>
+        <div class="cal-grid" id="cal"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="result-card">
+      <div class="result-header">
+        <div class="platform-dot" style="background:#FF5A5F"></div>
+        <span>에어비앤비</span>
+        <div class="fee-badge">수수료 15.5%</div>
+      </div>
+      <div class="reg-price-box">
+        <div class="reg-price-row">
+          <span class="reg-price-tag">플랫폼 등록 단가 (주중)</span>
+          <span>
+            <span class="reg-price-val wd" id="ab-reg-wd">—</span>
+            <span class="disc-arrow" id="ab-disc-arrow-wd" style="display:none;">→</span>
+            <span class="disc-after" id="ab-disc-wd"></span>
+          </span>
+        </div>
+        <div class="reg-price-row">
+          <span class="reg-price-tag">플랫폼 등록 단가 (주말)</span>
+          <span>
+            <span class="reg-price-val we" id="ab-reg-we">—</span>
+            <span class="disc-arrow" id="ab-disc-arrow-we" style="display:none;">→</span>
+            <span class="disc-after" id="ab-disc-we"></span>
+          </span>
+        </div>
+      </div>
+      <div class="detail-rows">
+        <div class="detail-row"><span class="dr-label">주중 수익 (<span id="ab-wd-nights">0</span>박)</span><span id="ab-wd-rev">—</span></div>
+        <div class="detail-row"><span class="dr-label">주말 수익 (<span id="ab-we-nights">0</span>박)</span><span id="ab-we-rev">—</span></div>
+        <div class="detail-row"><span class="dr-label">게스트 총 결제 (할인 후)</span><span id="ab-gross">—</span></div>
+        <div class="detail-row"><span class="dr-label">수수료 차감 (15.5%)</span><span id="ab-fee">—</span></div>
+      </div>
+      <div class="result-footer"><span class="rf-label">호스트 실수령</span><span class="rf-val ab-color" id="ab-net">—</span></div>
+    </div>
+
+    <div class="result-card">
+      <div class="result-header">
+        <div class="platform-dot" style="background:#003580"></div>
+        <span>부킹닷컴</span>
+        <div class="fee-badge">수수료 17.5%</div>
+      </div>
+      <div class="reg-price-box">
+        <div class="reg-price-row">
+          <span class="reg-price-tag">플랫폼 등록 단가 (주중)</span>
+          <span>
+            <span class="reg-price-val wd" id="bk-reg-wd">—</span>
+            <span class="disc-arrow" id="bk-disc-arrow-wd" style="display:none;">→</span>
+            <span class="disc-after" id="bk-disc-wd"></span>
+          </span>
+        </div>
+        <div class="reg-price-row">
+          <span class="reg-price-tag">플랫폼 등록 단가 (주말)</span>
+          <span>
+            <span class="reg-price-val we" id="bk-reg-we">—</span>
+            <span class="disc-arrow" id="bk-disc-arrow-we" style="display:none;">→</span>
+            <span class="disc-after" id="bk-disc-we"></span>
+          </span>
+        </div>
+      </div>
+      <div class="detail-rows">
+        <div class="detail-row"><span class="dr-label">주중 수익 (<span id="bk-wd-nights">0</span>박)</span><span id="bk-wd-rev">—</span></div>
+        <div class="detail-row"><span class="dr-label">주말 수익 (<span id="bk-we-nights">0</span>박)</span><span id="bk-we-rev">—</span></div>
+        <div class="detail-row"><span class="dr-label">게스트 총 결제 (할인 후)</span><span id="bk-gross">—</span></div>
+        <div class="detail-row"><span class="dr-label">수수료 차감 (17.5%)</span><span id="bk-fee">—</span></div>
+      </div>
+      <div class="result-footer"><span class="rf-label">호스트 실수령</span><span class="rf-val bk-color" id="bk-net">—</span></div>
+    </div>
+
+    <div class="tip-box" id="tip"></div>
+
+    <!-- 월 고정비용 입력 -->
+    <div class="cost-card">
+      <div class="card-title">월 고정 비용</div>
+      <div class="cost-field">
+        <label>월세</label>
+        <div class="cost-input-wrap">
+          <input type="number" id="cost-rent" value="0" step="10000" min="0" inputmode="numeric" oninput="calc()" />
+          <span class="cost-unit">원</span>
+        </div>
+      </div>
+      <div class="cost-field">
+        <label>대출 이자</label>
+        <div class="cost-input-wrap">
+          <input type="number" id="cost-loan" value="0" step="10000" min="0" inputmode="numeric" oninput="calc()" />
+          <span class="cost-unit">원</span>
+        </div>
+      </div>
+      <div class="cost-field">
+        <label>비품 / 소모품</label>
+        <div class="cost-input-wrap">
+          <input type="number" id="cost-goods" value="0" step="1000" min="0" inputmode="numeric" oninput="calc()" />
+          <span class="cost-unit">원</span>
+        </div>
+      </div>
+      <div class="cost-field">
+        <label>청소비</label>
+        <div class="cost-input-wrap">
+          <input type="number" id="cost-clean" value="0" step="1000" min="0" inputmode="numeric" oninput="calc()" />
+          <span class="cost-unit">원</span>
+        </div>
+      </div>
+      <div class="cost-field">
+        <label>기타 비용</label>
+        <div class="cost-input-wrap">
+          <input type="number" id="cost-etc" value="0" step="1000" min="0" inputmode="numeric" oninput="calc()" />
+          <span class="cost-unit">원</span>
+        </div>
+      </div>
+      <div class="cost-total-row">
+        <span class="cost-total-label">총 비용</span>
+        <span class="cost-total-val" id="cost-total">0원</span>
+      </div>
+    </div>
+
+    <!-- 순수익 결과 -->
+    <div class="profit-card">
+      <div class="profit-header">
+        💰 월 순수익 계산
+        <span class="ph-sub">실수령 − 총 비용</span>
+      </div>
+      <div style="padding:10px 16px 0; font-size:12px; font-weight:700; color:var(--muted); letter-spacing:0.3px;">AIRBNB 기준</div>
+      <div class="profit-body">
+        <div class="profit-row"><span class="pr-label">호스트 실수령</span><span class="pr-val" id="pf-ab-net">—</span></div>
+        <div class="profit-row minus"><span class="pr-label">총 비용 차감</span><span class="pr-val" id="pf-ab-cost">—</span></div>
+      </div>
+      <div class="profit-footer" style="border-top:1px solid var(--border);">
+        <span class="pf-label">순수익 (에어비앤비)</span>
+        <span class="pf-val" id="pf-ab-profit">—</span>
+      </div>
+      <div style="padding:10px 16px 0; font-size:12px; font-weight:700; color:var(--muted); letter-spacing:0.3px; border-top:1.5px solid var(--border);">BOOKING.COM 기준</div>
+      <div class="profit-body">
+        <div class="profit-row"><span class="pr-label">호스트 실수령</span><span class="pr-val" id="pf-bk-net">—</span></div>
+        <div class="profit-row minus"><span class="pr-label">총 비용 차감</span><span class="pr-val" id="pf-bk-cost">—</span></div>
+      </div>
+      <div class="profit-footer" style="border-top:1px solid var(--border);">
+        <span class="pf-label">순수익 (부킹닷컴)</span>
+        <span class="pf-val" id="pf-bk-profit">—</span>
+      </div>
+    </div>
+
+    <!-- 세금 설정 -->
+    <div class="tax-card">
+      <div class="card-title">세금 설정 · 연간 수익 추정</div>
+
+      <div style="font-size:12px;color:var(--muted);font-weight:500;margin-bottom:6px;">사업자 유형</div>
+      <div class="tax-type-tabs">
+        <button class="tax-type-tab on" id="tax-tab-simple" onclick="setTaxType('simple')">간이과세자</button>
+        <button class="tax-type-tab" id="tax-tab-general" onclick="setTaxType('general')">일반과세자</button>
+      </div>
+
+      <div class="tax-info-box" id="tax-info-simple">
+        <b>간이과세자</b> — 연 매출 1억 400만원 미만.<br>
+        <span id="simple-vat-desc">부가세: 연매출 4,800만원 이하 시 <b>면세</b></span><br>
+        세금계산서 발급 의무 없음 · 부가세 환급 불가.
+      </div>
+      <div class="tax-info-box" id="tax-info-general" style="display:none;">
+        <b>일반과세자</b> — 연 매출 1억 400만원 이상 또는 선택.<br>
+        부가세: 매출의 <b>10%</b> (매입세액 공제 후 납부)<br>
+        세금계산서 발급 의무 · 매입세액 공제 가능.
+      </div>
+
+      <div id="vat-input-box" style="display:none; margin-bottom:10px;">
+        <div class="cost-field">
+          <label>연간 매입세액 공제 (원)</label>
+          <div class="cost-input-wrap" style="width:100%;">
+            <input type="number" id="vat-input" value="0" step="100000" min="0" inputmode="numeric" oninput="calcAnnual()" />
+            <span class="cost-unit">원</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:12px;color:var(--muted);font-weight:500;margin-bottom:6px;">종합소득세 경비율 방식</div>
+      <!-- 자동 전환 배지 -->
+      <div id="exp-auto-badge" style="display:flex;align-items:center;gap:8px;background:#F0F4FF;border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:10px;font-size:12px;color:#3A4A7A;">
+        <span style="font-size:16px;">⚡</span>
+        <span id="exp-auto-text">연간 매출에 따라 자동 적용됩니다</span>
+      </div>
+
+      <div id="exp-std-box">
+        <div class="tax-info-box" style="background:#F0FFF4;color:#1A5C2A;">
+          <b>단순경비율</b> (숙박업 76.4%) — 직전연도 수입금액 2,400만원 미만인 경우 적용.<br>
+          과세표준 = 수입금액 × (1 − 0.764)
+        </div>
+        <div class="std-exp-row">
+          <span>적용 단순경비율</span>
+          <span class="std-exp-val">76.4%</span>
+        </div>
+      </div>
+
+      <div id="exp-ref-box" style="display:none;">
+        <div class="tax-info-box" style="background:#FFF8F0;color:#7A4A00;">
+          <b>기준경비율</b> (숙박업 14.8%) — 직전연도 수입 3,600만원 이상.<br>
+          과세표준 = 수입 − 주요경비(실제) − (수입 × 14.8%)
+        </div>
+        <div style="font-size:11px;color:#C87E00;background:#FFF3D0;border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:10px;">
+          📄 매입비용 · 인건비 · 임차료는 증빙서류(세금계산서·영수증·계약서) 필수
+        </div>
+        <div class="cost-field">
+          <label>매입비용 (연간, 증빙 필수)</label>
+          <div class="cost-input-wrap" style="width:100%;">
+            <input type="number" id="ref-purchase" value="0" step="100000" min="0" inputmode="numeric" oninput="calcAnnual()" onchange="calcAnnual()" />
+            <span class="cost-unit">원</span>
+          </div>
+        </div>
+        <div class="cost-field">
+          <label>인건비 (연간, 증빙 필수)</label>
+          <div class="cost-input-wrap" style="width:100%;">
+            <input type="number" id="ref-labor" value="0" step="100000" min="0" inputmode="numeric" oninput="calcAnnual()" onchange="calcAnnual()" />
+            <span class="cost-unit">원</span>
+          </div>
+        </div>
+        <div class="cost-field">
+          <label>임차료 (연간, 증빙 필수)</label>
+          <div class="cost-input-wrap" style="width:100%;">
+            <input type="number" id="ref-rent-tax" value="0" step="100000" min="0" inputmode="numeric" oninput="calcAnnual()" onchange="calcAnnual()" />
+            <span class="cost-unit">원</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="deduction-field">
+        <label>기본공제 인원 (본인 포함, 1인당 150만원)</label>
+        <div class="cost-input-wrap" style="width:100%;">
+          <input type="number" id="deduction-persons" value="1" min="1" max="10" step="1" inputmode="numeric" oninput="calcAnnual()" />
+          <span class="cost-unit">명</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 연간 수익 추정 카드 -->
+    <div class="annual-card">
+      <div class="annual-header">
+        📊 연간 세후 순수익 추정
+        <span class="ah-sub">월 수익 × 12개월 기준</span>
+      </div>
+      <div class="annual-platform-tab">
+        <button class="apt-btn on" id="apt-ab" onclick="setAnnualTab('ab')">에어비앤비</button>
+        <button class="apt-btn" id="apt-bk" onclick="setAnnualTab('bk')">부킹닷컴</button>
+      </div>
+      <div class="annual-body">
+        <div class="annual-row"><span class="ar-label">연간 총매출 (수수료 차감 전)</span><span class="ar-val" id="an-gross">—</span></div>
+        <div class="annual-row minus"><span class="ar-label">플랫폼 수수료</span><span class="ar-val" id="an-fee">—</span></div>
+        <div class="annual-row minus"><span class="ar-label">연간 총 운영비용</span><span class="ar-val" id="an-cost">—</span></div>
+        <div class="annual-row minus"><span class="ar-label" id="an-vat-label">부가세 납부</span><span class="ar-val" id="an-vat">—</span></div>
+        <div class="annual-row" style="background:var(--bg);margin:4px -16px;padding:8px 16px;">
+          <span class="ar-label" style="font-weight:700;color:var(--text);">세전 연간 순수익</span>
+          <span class="ar-val" style="font-size:15px;" id="an-pretax">—</span>
+        </div>
+        <div class="annual-row"><span class="ar-label" id="an-exp-label">경비율 적용 과세표준</span><span class="ar-val" id="an-taxbase">—</span></div>
+        <div class="annual-row"><span class="ar-label">기본공제 합계</span><span class="ar-val" id="an-deduction">—</span></div>
+        <div class="annual-row"><span class="ar-label">최종 과세표준</span><span class="ar-val" id="an-finalbase">—</span></div>
+        <div class="annual-row tax-row minus"><span class="ar-label">종합소득세 (누진세율)</span><span class="ar-val" id="an-incometax">—</span></div>
+        <div class="annual-row tax-row minus"><span class="ar-label">지방소득세 (소득세의 10%)</span><span class="ar-val" id="an-localtax">—</span></div>
+      </div>
+      <div class="tax-bracket-box" id="an-bracket-box"></div>
+      <div class="annual-footer">
+        <span class="af-label">연간 세후 순수익</span>
+        <span class="af-val" id="an-aftertax">—</span>
+      </div>
+    </div>
+      <div class="result-header">
+        <div class="platform-dot" style="background:#003580"></div>
+        <span>부킹닷컴 실수령 맞추기</span>
+      </div>
+      <div style="padding:10px 16px; font-size:12px; color:var(--muted); line-height:1.6; border-bottom:1px solid var(--border);">
+        에어비앤비와 동일한 실수령을 얻으려면 부킹닷컴에 아래 단가로 등록하세요.
+      </div>
+      <div class="reg-price-box">
+        <div class="reg-price-row">
+          <span class="reg-price-tag">부킹닷컴 등록 단가 (주중)</span>
+          <div style="text-align:right;">
+            <div class="reg-price-val wd" id="bk-eq-wd">—</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">에어비앤비 대비 <span id="bk-eq-wd-diff" style="font-weight:700;color:#A32D2D;">—</span></div>
+            <div class="guest-pay" id="bk-eq-wd-guest" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="reg-price-row">
+          <span class="reg-price-tag">부킹닷컴 등록 단가 (주말)</span>
+          <div style="text-align:right;">
+            <div class="reg-price-val we" id="bk-eq-we">—</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">에어비앤비 대비 <span id="bk-eq-we-diff" style="font-weight:700;color:#A32D2D;">—</span></div>
+            <div class="guest-pay" id="bk-eq-we-guest" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-rows">
+        <div class="detail-row"><span class="dr-label">등록 단가 인상률</span><span id="bk-eq-pct" style="font-weight:700;color:#A32D2D;">—</span></div>
+        <div class="detail-row"><span class="dr-label">게스트 총 결제 (할인 후)</span><span id="bk-eq-gross">—</span></div>
+        <div class="detail-row"><span class="dr-label">수수료 차감 (17.5%)</span><span id="bk-eq-fee">—</span></div>
+      </div>
+      <div class="result-footer">
+        <span class="rf-label">호스트 실수령 (에어비앤비와 동일)</span>
+        <span class="rf-val bk-color" id="bk-eq-net">—</span>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>수수료 · 고정비용 반영 순수익 계산기</footer>
+
+<style>
+/* 추정표 버튼 */
+.sim-btn-wrap { padding: 0 16px 24px; max-width: 480px; margin: 0 auto; }
+.sim-btn {
+  width: 100%; padding: 16px; background: #1A1A1A; color: #fff;
+  border: none; border-radius: var(--radius); font-size: 15px; font-weight: 700;
+  font-family: inherit; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; gap: 8px; letter-spacing: -0.3px;
+}
+.sim-btn:active { opacity: 0.85; }
+
+/* 모달 */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  z-index: 100; overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.modal-overlay.open { display: block; }
+.modal-box {
+  background: var(--surface); margin: 16px auto; max-width: 98vw;
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+}
+.modal-header {
+  background: #1A1A1A; color: #fff; padding: 14px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header h2 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+.modal-close {
+  background: none; border: none; color: #fff; font-size: 22px;
+  cursor: pointer; padding: 0 4px; line-height: 1;
+}
+.modal-meta {
+  padding: 12px 16px; font-size: 11px; color: var(--muted);
+  background: var(--bg); border-bottom: 1px solid var(--border); line-height: 1.7;
+}
+.modal-platform-row {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border);
+}
+.modal-platform-btn {
+  flex: 1; padding: 10px 0; font-size: 13px; font-weight: 700;
+  font-family: inherit; border: none; background: transparent;
+  color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
+}
+.modal-platform-btn.on { color: var(--text); border-bottom-color: #1A1A1A; }
+
+/* 표 래퍼 */
+.sim-table-wrap { overflow-x: auto; padding: 12px 0 16px; }
+table.sim-table {
+  border-collapse: collapse; font-size: 11px;
+  margin: 0 auto;
+}
+table.sim-table th, table.sim-table td {
+  border: 1px solid var(--border); padding: 7px 6px;
+  text-align: center; white-space: nowrap; min-width: 68px;
+}
+table.sim-table th {
+  background: #F0F0EE; font-weight: 700; font-size: 10px; color: #555;
+}
+table.sim-table th.row-header {
+  background: #E8E8E5; color: #333; min-width: 52px;
+}
+table.sim-table td.row-label {
+  background: #F0F0EE; font-weight: 700; font-size: 10px; color: #555;
+}
+/* 현재 단가·운영일 교차 강조 */
+table.sim-table td.cur-col { background: #EAF2FF !important; }
+table.sim-table td.cur-row { background: #FFF3D0 !important; }
+table.sim-table td.cur-both {
+  background: #1A1A1A !important; color: #fff !important;
+  font-weight: 700;
+}
+/* 색상 단계 */
+table.sim-table td.c-neg  { background: #FFE8E8; color: #A32D2D; }
+table.sim-table td.c-low  { background: #FFF3D0; color: #7A5A00; }
+table.sim-table td.c-mid  { background: #E8F5E9; color: #1A5C2A; }
+table.sim-table td.c-high { background: #C8E6C9; color: #0D3B1A; }
+table.sim-table td.c-top  { background: #2D5A2D; color: #fff; }
+</style>
+
+<!-- 추정표 버튼 -->
+<div class="sim-btn-wrap">
+  <button class="sim-btn" onclick="openSimModal()">
+    📊 연간 순수익 추정표 만들기
+  </button>
+</div>
+
+<!-- 추정표 모달 -->
+<div class="modal-overlay" id="sim-modal" onclick="handleModalClick(event)">
+  <div class="modal-box" id="sim-modal-box">
+    <div class="modal-header">
+      <h2>📊 연간 세후 순수익 추정표</h2>
+      <button class="modal-close" onclick="closeSimModal()">×</button>
+    </div>
+    <div class="modal-meta" id="sim-meta"></div>
+    <div class="modal-platform-row">
+      <button class="modal-platform-btn on" id="sim-tab-ab" onclick="setSimTab('ab')">에어비앤비</button>
+      <button class="modal-platform-btn" id="sim-tab-bk" onclick="setSimTab('bk')">부킹닷컴</button>
+    </div>
+    <div class="sim-table-wrap">
+      <table class="sim-table" id="sim-table"></table>
+    </div>
+    <div style="padding:8px 16px 16px;font-size:10px;color:var(--muted);line-height:1.6;">
+      ※ 주중:주말 = 11:4 고정 비율 적용 · 현재 설정(할인율·비용·세금 등) 동일 적용<br>
+      ■ 현재 입력값 기준 셀 · 색상: 빨강(손실) → 노랑 → 연두 → 초록(고수익)
+    </div>
+  </div>
+</div>
+
+<script>
+let discSet = new Set();
+let discCustomOn = false;
+
+function getTotalDisc() {
+  let total = 0;
+  discSet.forEach(v => total += v);
+  if (discCustomOn) {
+    const cv = parseFloat(document.getElementById('disc-custom').value) || 0;
+    total += cv;
+  }
+  return Math.min(total, 99);
+}
+
+function toggleDisc(pct) {
+  if (discSet.has(pct)) discSet.delete(pct);
+  else discSet.add(pct);
+  document.getElementById('disc'+pct).classList.toggle('on', discSet.has(pct));
+  updateDiscUI();
+  calc();
+}
+
+function toggleDiscCustom() {
+  discCustomOn = !discCustomOn;
+  document.getElementById('disc-custom-btn').classList.toggle('on', discCustomOn);
+  document.getElementById('disc-custom-wrap').style.display = discCustomOn ? '' : 'none';
+  updateDiscUI();
+  calc();
+}
+
+function updateDiscUI() {
+  const total = getTotalDisc();
+  const any = discSet.size > 0 || discCustomOn;
+  document.getElementById('disc-total-row').style.display = any ? '' : 'none';
+  document.getElementById('disc-total-val').textContent = total.toFixed(1) + '%';
+  const preview = document.getElementById('disc-preview');
+  if (any && total > 0) {
+    preview.classList.add('show');
+    // 할인 후 단가 미리보기 갱신
+    const wdPrice = parseFloat(document.getElementById('wd-price').value) || 0;
+    const { wePrice } = getWePrice();
+    const mult = 1 - total / 100;
+    document.getElementById('dp-wd').textContent = won(wdPrice * mult);
+    document.getElementById('dp-we').textContent = won(wePrice * mult);
+  } else {
+    preview.classList.remove('show');
+  }
+}
+
+const AB = 0.155, BK = 0.175;
+let weMode = 'mult';
+let bookedDays = new Set(); // "YYYY-MM-DD"
+let suppressNightsSync = false; // 달력→입력창 동기화 중 무한루프 방지
+
+function won(n) { return Math.round(n).toLocaleString('ko-KR') + '원'; }
+
+function currentYM() {
+  const pick = document.getElementById('month-pick').value;
+  if (!pick) return null;
+  const [y, m] = pick.split('-').map(Number);
+  return { y, m };
+}
+
+function isWeekend(y, m, d) {
+  const dow = new Date(y, m - 1, d).getDay();
+  return dow === 5 || dow === 6;
+}
+
+function dayKey(y, m, d) {
+  return y + '-' + String(m).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+}
+
+// 달력에서 날짜 탭 → 토글 후 입력창 숫자 업데이트
+function toggleDay(y, m, d) {
+  const key = dayKey(y, m, d);
+  if (bookedDays.has(key)) bookedDays.delete(key);
+  else bookedDays.add(key);
+  syncNightsInputFromCalendar();
+  renderCalendar();
+  calc();
+}
+
+// 달력 → 입력창 숫자 동기화
+function syncNightsInputFromCalendar() {
+  const { wdN, weN } = getBookedCounts();
+  suppressNightsSync = true;
+  document.getElementById('wd-nights').value = wdN;
+  document.getElementById('we-nights').value = weN;
+  suppressNightsSync = false;
+}
+
+// 입력창 숫자 → 달력 자동 채움 (앞 날짜부터)
+function onNightsInput(type) {
+  if (suppressNightsSync) return;
+  const ym = currentYM();
+  if (!ym) return;
+  const { y, m } = ym;
+  const daysInMonth = new Date(y, m, 0).getDate();
+
+  const targetWd = Math.max(0, parseInt(document.getElementById('wd-nights').value) || 0);
+  const targetWe = Math.max(0, parseInt(document.getElementById('we-nights').value) || 0);
+
+  // 해당 달의 기존 예약 제거
+  for (let d = 1; d <= daysInMonth; d++) {
+    bookedDays.delete(dayKey(y, m, d));
+  }
+
+  // 앞에서부터 채우기
+  let wdFilled = 0, weFilled = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const we = isWeekend(y, m, d);
+    if (we && weFilled < targetWe) { bookedDays.add(dayKey(y, m, d)); weFilled++; }
+    else if (!we && wdFilled < targetWd) { bookedDays.add(dayKey(y, m, d)); wdFilled++; }
+  }
+
+  renderCalendar();
+  calc();
+}
+
+function shiftMonth(delta) {
+  const pick = document.getElementById('month-pick');
+  const ym = currentYM();
+  if (!ym) return;
+  let { y, m } = ym;
+  m += delta;
+  if (m > 12) { m = 1; y++; }
+  if (m < 1)  { m = 12; y--; }
+  pick.value = y + '-' + String(m).padStart(2,'0');
+  onMonthChange();
+}
+
+function clearAll() {
+  const ym = currentYM();
+  if (!ym) return;
+  const { y, m } = ym;
+  const daysInMonth = new Date(y, m, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) bookedDays.delete(dayKey(y, m, d));
+  suppressNightsSync = true;
+  document.getElementById('wd-nights').value = 0;
+  document.getElementById('we-nights').value = 0;
+  suppressNightsSync = false;
+  renderCalendar();
+  calc();
+}
+
+function onMonthChange() {
+  const ym = currentYM();
+  if (!ym) return;
+  // 새 달로 이동 시 입력창 기반으로 다시 채움
+  onNightsInput('wd');
+}
+
+function renderCalendar() {
+  const ym = currentYM();
+  if (!ym) return;
+  const { y, m } = ym;
+  const firstDay = new Date(y, m - 1, 1).getDay();
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const heads = ['일','월','화','수','목','금','토'];
+  const headClasses = ['sun','','','','','sat','sat'];
+
+  let html = heads.map((h, i) => `<div class="cal-head ${headClasses[i]}">${h}</div>`).join('');
+  for (let i = 0; i < firstDay; i++) html += `<div class="cal-cell empty"></div>`;
+
+  let wdCount = 0, weCount = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const we = isWeekend(y, m, d);
+    const booked = bookedDays.has(dayKey(y, m, d));
+    if (booked) { if (we) weCount++; else wdCount++; }
+    const cls = booked ? (we ? 'we-booked' : 'wd-booked') : (we ? 'we-open' : 'wd-open');
+    html += `<div class="cal-cell ${cls}" onclick="toggleDay(${y},${m},${d})">${d}</div>`;
+  }
+
+  document.getElementById('cal').innerHTML = html;
+  document.getElementById('count-wd').textContent = wdCount;
+  document.getElementById('count-we').textContent = weCount;
+
+  const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('cal-label').textContent = y + '년 ' + monthNames[m-1] + ' 캘린더';
+}
+
+function getBookedCounts() {
+  const ym = currentYM();
+  if (!ym) return { wdN: 0, weN: 0 };
+  const { y, m } = ym;
+  let wdN = 0, weN = 0;
+  bookedDays.forEach(key => {
+    const [ky, km, kd] = key.split('-').map(Number);
+    if (ky === y && km === m) {
+      if (isWeekend(y, m, kd)) weN++; else wdN++;
+    }
+  });
+  return { wdN, weN };
+}
+
+function getWePrice() {
+  const wdPrice = parseFloat(document.getElementById('wd-price').value) || 0;
+  if (weMode === 'mult') {
+    const mult = parseFloat(document.getElementById('mult').value) || 1.3;
+    return { wePrice: wdPrice * mult, mult };
+  } else {
+    const wePrice = parseFloat(document.getElementById('we-price-direct').value) || 0;
+    const mult = wdPrice > 0 ? wePrice / wdPrice : 0;
+    return { wePrice, mult };
+  }
+}
+
+function setWeMode(mode) {
+  weMode = mode;
+  document.getElementById('tab-mult').classList.toggle('on', mode === 'mult');
+  document.getElementById('tab-direct').classList.toggle('on', mode === 'direct');
+  document.getElementById('mode-mult').style.display = mode === 'mult' ? '' : 'none';
+  document.getElementById('mode-direct').style.display = mode === 'direct' ? '' : 'none';
+  calc();
+}
+
+function onWdChange() { if (weMode === 'mult') updateMultBadge(); else updateDirectBadge(); calc(); }
+function onMultChange() { updateMultBadge(); calc(); }
+function onWeDirectChange() { updateDirectBadge(); calc(); }
+
+function updateMultBadge() {
+  const wdPrice = parseFloat(document.getElementById('wd-price').value) || 0;
+  const mult = parseFloat(document.getElementById('mult').value) || 1.3;
+  document.getElementById('mult-display').textContent = mult.toFixed(2) + '×';
+  document.getElementById('we-badge-mult').textContent = won(wdPrice * mult);
+  document.getElementById('we-badge-ratio').textContent = '주중의 ' + mult.toFixed(2) + '배';
+}
+
+function updateDirectBadge() {
+  const wdPrice = parseFloat(document.getElementById('wd-price').value) || 0;
+  const wePrice = parseFloat(document.getElementById('we-price-direct').value) || 0;
+  const mult = wdPrice > 0 ? (wePrice / wdPrice) : 0;
+  const diff = wePrice - wdPrice;
+  document.getElementById('we-badge-direct-mult').textContent = mult.toFixed(2) + '배';
+  document.getElementById('we-badge-direct-diff').textContent = diff >= 0 ? '+' + won(diff) : won(diff);
+}
+
+function calc() {
+  const wdPrice = parseFloat(document.getElementById('wd-price').value) || 0;
+  const { wePrice, mult } = getWePrice();
+  const { wdN, weN } = getBookedCounts();
+  const discPct = getTotalDisc();
+  const discMult = 1 - discPct / 100;
+  const wdEff = wdPrice * discMult;
+  const weEff = wePrice * discMult;
+
+  function solve(fee) {
+    const gross = wdEff * wdN + weEff * weN;
+    const feeAmt = gross * fee;
+    const net = gross - feeAmt;
+    return { gross, feeAmt, net, wdRev: wdEff * wdN * (1-fee), weRev: weEff * weN * (1-fee) };
+  }
+
+  const ab = solve(AB);
+  const bk = solve(BK);
+
+  // 등록단가 = 입력한 정가 (할인 전)
+  // 게스트 실지불 = 정가 * discMult
+  const hasDisc = discPct > 0;
+  function setRegPrice(pfx, wd, we, wdD, weD) {
+    document.getElementById(pfx+'-reg-wd').textContent = won(wd);
+    document.getElementById(pfx+'-reg-we').textContent = won(we);
+    document.getElementById(pfx+'-disc-arrow-wd').style.display = hasDisc ? '' : 'none';
+    document.getElementById(pfx+'-disc-arrow-we').style.display = hasDisc ? '' : 'none';
+    document.getElementById(pfx+'-disc-wd').textContent = hasDisc ? won(wdD) + ' (게스트 실지불)' : '';
+    document.getElementById(pfx+'-disc-we').textContent = hasDisc ? won(weD) + ' (게스트 실지불)' : '';
+  }
+  setRegPrice('ab', wdPrice, wePrice, wdEff, weEff);
+  setRegPrice('bk', wdPrice, wePrice, wdEff, weEff);
+
+  document.getElementById('ab-wd-nights').textContent = wdN;
+  document.getElementById('ab-we-nights').textContent = weN;
+  document.getElementById('ab-wd-rev').textContent = won(ab.wdRev);
+  document.getElementById('ab-we-rev').textContent = won(ab.weRev);
+  document.getElementById('ab-gross').textContent = won(ab.gross);
+  document.getElementById('ab-fee').textContent = '-' + won(ab.feeAmt);
+  document.getElementById('ab-net').textContent = won(ab.net);
+
+  document.getElementById('bk-wd-nights').textContent = wdN;
+  document.getElementById('bk-we-nights').textContent = weN;
+  document.getElementById('bk-wd-rev').textContent = won(bk.wdRev);
+  document.getElementById('bk-we-rev').textContent = won(bk.weRev);
+  document.getElementById('bk-gross').textContent = won(bk.gross);
+  document.getElementById('bk-fee').textContent = '-' + won(bk.feeAmt);
+  document.getElementById('bk-net').textContent = won(bk.net);
+
+  const diff = ab.net - bk.net;
+  document.getElementById('tip').textContent =
+    '총 ' + (wdN + weN) + '박 기준. 같은 단가로 운영 시 에어비앤비 실수령이 부킹닷컴보다 ' +
+    won(diff) + ' 더 많습니다 (수수료 차이 ' + ((BK - AB) * 100).toFixed(1) + '%p).';
+
+  // 부킹닷컴 등록 단가 역산
+  // 조건: bkRegWd * discMult * (wdN + mult*weN) * (1-BK) = ab.net
+  // → bkRegWd = ab.net / (discMult * (wdN + mult*weN) * (1-BK))
+  const eqDenom = discMult * (wdN + mult * weN) * (1 - BK);
+  if (eqDenom > 0 && ab.net > 0) {
+    const bkEqWd = ab.net / eqDenom;          // 플랫폼 등록 단가 (할인 전 정가)
+    const bkEqWe = bkEqWd * mult;
+    const bkEqWdGuest = bkEqWd * discMult;    // 게스트 실지불
+    const bkEqWeGuest = bkEqWe * discMult;
+    const bkEqGross = bkEqWdGuest * wdN + bkEqWeGuest * weN;
+    const bkEqFee = bkEqGross * BK;
+    const bkEqNet = bkEqGross - bkEqFee;
+    const pct = wdPrice > 0 ? ((bkEqWd - wdPrice) / wdPrice * 100) : 0;
+    const diffWd = bkEqWd - wdPrice;
+    const diffWe = bkEqWe - wePrice;
+
+    document.getElementById('bk-eq-wd').textContent = won(bkEqWd);
+    document.getElementById('bk-eq-we').textContent = won(bkEqWe);
+    document.getElementById('bk-eq-wd-diff').textContent = (diffWd >= 0 ? '+' : '') + won(diffWd);
+    document.getElementById('bk-eq-we-diff').textContent = (diffWe >= 0 ? '+' : '') + won(diffWe);
+    document.getElementById('bk-eq-pct').textContent = (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
+    document.getElementById('bk-eq-gross').textContent = won(bkEqGross);
+    document.getElementById('bk-eq-fee').textContent = '-' + won(bkEqFee);
+    document.getElementById('bk-eq-net').textContent = won(bkEqNet);
+
+    // 할인 적용 시 게스트 실지불 표시
+    const wdG = document.getElementById('bk-eq-wd-guest');
+    const weG = document.getElementById('bk-eq-we-guest');
+    if (discPct > 0) {
+      wdG.style.display = ''; wdG.textContent = '게스트 실지불 ' + won(bkEqWdGuest) + ' (-' + discPct.toFixed(1) + '%)';
+      weG.style.display = ''; weG.textContent = '게스트 실지불 ' + won(bkEqWeGuest) + ' (-' + discPct.toFixed(1) + '%)';
+    } else {
+      wdG.style.display = 'none';
+      weG.style.display = 'none';
+    }
+  }
+
+  // 순수익 계산
+  const totalCost = getCostTotal();
+  document.getElementById('cost-total').textContent = won(totalCost);
+
+  function setProfit(pfx, net) {
+    const profit = net - totalCost;
+    document.getElementById('pf-' + pfx + '-net').textContent = won(net);
+    document.getElementById('pf-' + pfx + '-cost').textContent = '-' + won(totalCost);
+    const el = document.getElementById('pf-' + pfx + '-profit');
+    el.textContent = (profit >= 0 ? '' : '-') + won(Math.abs(profit));
+    el.className = 'pf-val ' + (profit >= 0 ? 'positive' : 'negative');
+  }
+  setProfit('ab', ab.net);
+  setProfit('bk', bk.net);
+
+  // 연간 계산용 저장 — 수수료 차감 전 총매출 기준
+  lastAbGross = ab.gross;
+  lastAbFee   = ab.feeAmt;
+  lastBkGross = bk.gross;
+  lastBkFee   = bk.feeAmt;
+  calcAnnual();
+}
+
+function getCostTotal() {
+  const rent  = parseFloat(document.getElementById('cost-rent').value)  || 0;
+  const loan  = parseFloat(document.getElementById('cost-loan').value)  || 0;
+  const goods = parseFloat(document.getElementById('cost-goods').value) || 0;
+  const clean = parseFloat(document.getElementById('cost-clean').value) || 0;
+  const etc   = parseFloat(document.getElementById('cost-etc').value)   || 0;
+  return rent + loan + goods + clean + etc;
+}
+
+// ── 세금·연간 관련 상태 ──
+let taxType = 'simple';   // 'simple' | 'general'
+let annualTab = 'ab';     // 'ab' | 'bk'
+let lastAbGross = 0, lastAbFee = 0;
+let lastBkGross = 0, lastBkFee = 0;
+
+function setTaxType(t) {
+  taxType = t;
+  document.getElementById('tax-tab-simple').classList.toggle('on', t === 'simple');
+  document.getElementById('tax-tab-general').classList.toggle('on', t === 'general');
+  document.getElementById('tax-info-simple').style.display = t === 'simple' ? '' : 'none';
+  document.getElementById('tax-info-general').style.display = t === 'general' ? '' : 'none';
+  document.getElementById('vat-input-box').style.display = t === 'general' ? '' : 'none';
+  calcAnnual();
+}
+
+function setAnnualTab(t) {
+  annualTab = t;
+  document.getElementById('apt-ab').classList.toggle('on', t === 'ab');
+  document.getElementById('apt-bk').classList.toggle('on', t === 'bk');
+  calcAnnual();
+}
+
+// 종합소득세 누진세율 (2024년 기준)
+function calcIncomeTax(taxable) {
+  if (taxable <= 0) return { tax: 0, bracket: '과세표준 없음 (세금 0원)', rate: 0 };
+  const brackets = [
+    { limit: 14000000,   rate: 0.06, deduct: 0 },
+    { limit: 50000000,   rate: 0.15, deduct: 1260000 },
+    { limit: 88000000,   rate: 0.24, deduct: 5760000 },
+    { limit: 150000000,  rate: 0.35, deduct: 15440000 },
+    { limit: 300000000,  rate: 0.38, deduct: 19940000 },
+    { limit: 500000000,  rate: 0.40, deduct: 25940000 },
+    { limit: 1000000000, rate: 0.42, deduct: 35940000 },
+    { limit: Infinity,   rate: 0.45, deduct: 65940000 },
+  ];
+  const b = brackets.find(b => taxable <= b.limit);
+  const tax = Math.max(0, taxable * b.rate - b.deduct);
+  const bracketLabel = b.limit === Infinity ? '10억 초과 · 45%'
+    : (b.rate * 100).toFixed(0) + '% 구간 (과세표준 ' + (b.limit / 10000).toLocaleString() + '만원 이하)';
+  return { tax, bracket: bracketLabel, rate: b.rate };
+}
+
+function calcAnnual() {
+  // gross가 저장되지 않았으면 직접 재계산
+  if (lastAbGross === 0) {
+    const wdPrice = parseFloat(document.getElementById('wd-price').value) || 0;
+    const { wePrice } = getWePrice();
+    const { wdN, weN } = getBookedCounts();
+    const discPct = getTotalDisc();
+    const discMult = 1 - discPct / 100;
+    const g = (wdPrice * discMult * wdN) + (wePrice * discMult * weN);
+    lastAbGross = g; lastAbFee = g * AB;
+    lastBkGross = g; lastBkFee = g * BK;
+  }
+
+  // 수수료 차감 전 총매출 기준
+  const monthGross = annualTab === 'ab' ? lastAbGross : lastBkGross;
+  const monthFee   = annualTab === 'ab' ? lastAbFee   : lastBkFee;
+  const monthCost  = getCostTotal();
+
+  const annualGross    = monthGross * 12;   // 총매출 (수수료 차감 전)
+  const annualFee      = monthFee   * 12;   // 플랫폼 수수료
+  const annualCost     = monthCost  * 12;   // 운영비용
+  const annualNet      = annualGross - annualFee;  // 호스트 실수령
+
+  // ── 간이과세자 설명 동적 업데이트 ────────────────
+  if (taxType === 'simple') {
+    const descEl = document.getElementById('simple-vat-desc');
+    if (annualGross <= 48000000) {
+      descEl.innerHTML = '부가세: 연매출 4,800만원 이하 → <b style="color:#1A7A3C;">면세</b>';
+    } else {
+      descEl.innerHTML = '부가세: 연매출 4,800만원 초과 → 매출의 <b style="color:#D04448;">2.5%</b> 납부';
+    }
+  }
+
+  // ── 부가세 (총매출 기준) ─────────────────────────
+  let vatAmt = 0;
+  let vatLabel = '';
+  if (taxType === 'simple') {
+    if (annualGross <= 48000000) {
+      vatAmt = 0;
+      vatLabel = '부가세 면세 (간이·연매출 4,800만원 이하)';
+    } else {
+      vatAmt = annualGross * 0.025;
+      vatLabel = '부가세 납부 (간이 2.5% · 연매출 4,800만원 초과)';
+    }
+  } else {
+    const vatCredit = parseFloat(document.getElementById('vat-input').value) || 0;
+    vatAmt = Math.max(0, annualGross * 0.10 - vatCredit);
+    vatLabel = '부가세 납부 (일반 10% − 공제)';
+  }
+  document.getElementById('an-vat-label').textContent = vatLabel;
+
+  // 세전 순수익 = 실수령 − 운영비용 − 부가세
+  const preTax = annualNet - annualCost - vatAmt;
+
+  // ── 경비율 자동 판단 (총매출 3,600만원 기준) ────
+  const useRef = annualGross >= 36000000;
+
+  const badgeEl = document.getElementById('exp-auto-text');
+  if (useRef) {
+    badgeEl.innerHTML = '총매출 <b>' + Math.round(annualGross / 10000).toLocaleString() + '만원</b> → <b style="color:#C87E00;">기준경비율 14.8%</b> 자동 적용';
+    document.getElementById('exp-ref-box').style.display = '';
+    document.getElementById('exp-std-box').style.display = 'none';
+  } else {
+    badgeEl.innerHTML = '총매출 <b>' + Math.round(annualGross / 10000).toLocaleString() + '만원</b> → <b style="color:#1A7A3C;">단순경비율 76.4%</b> 자동 적용';
+    document.getElementById('exp-ref-box').style.display = 'none';
+    document.getElementById('exp-std-box').style.display = '';
+  }
+
+  // 과세표준은 총매출(수입금액) 기준
+  let taxBase = 0;
+  let expLabel = '';
+  if (!useRef) {
+    taxBase = Math.max(0, annualGross * (1 - 0.764));
+    expLabel = '단순경비율 76.4% 적용 과세표준';
+  } else {
+    const purchase = parseFloat(document.getElementById('ref-purchase').value) || 0;
+    const labor    = parseFloat(document.getElementById('ref-labor').value)    || 0;
+    const rentTax  = parseFloat(document.getElementById('ref-rent-tax').value) || 0;
+    const mainExp  = purchase + labor + rentTax;
+    taxBase = Math.max(0, annualGross - mainExp - annualGross * 0.148);
+    expLabel = '기준경비율 14.8% 적용 과세표준';
+  }
+  document.getElementById('an-exp-label').textContent = expLabel;
+
+  // ── 기본공제 ────────────────────────────────────
+  const persons   = parseInt(document.getElementById('deduction-persons').value) || 1;
+  const deduction = persons * 1500000;
+  const finalBase = Math.max(0, taxBase - deduction);
+
+  // ── 종합소득세 ──────────────────────────────────
+  const { tax: incomeTax, bracket } = calcIncomeTax(finalBase);
+  const localTax  = incomeTax * 0.1;
+  const totalTax  = incomeTax + localTax;
+  const afterTax  = preTax - totalTax;
+
+  // ── UI 업데이트 ─────────────────────────────────
+  document.getElementById('an-gross').textContent      = won(annualGross);
+  document.getElementById('an-fee').textContent        = '-' + won(annualFee);
+  document.getElementById('an-cost').textContent       = '-' + won(annualCost);
+  document.getElementById('an-vat').textContent        = vatAmt === 0 ? '면세 (0원)' : '-' + won(vatAmt);
+  document.getElementById('an-pretax').textContent     = won(preTax);
+  document.getElementById('an-taxbase').textContent    = won(taxBase);
+  document.getElementById('an-deduction').textContent  = '-' + won(deduction);
+  document.getElementById('an-finalbase').textContent  = won(finalBase);
+  document.getElementById('an-incometax').textContent  = '-' + won(incomeTax);
+  document.getElementById('an-localtax').textContent   = '-' + won(localTax);
+
+  // 부가세 면세일 때 행 색상 조정
+  const vatRow = document.getElementById('an-vat').parentElement;
+  if (vatAmt === 0) {
+    vatRow.classList.remove('minus');
+    document.getElementById('an-vat').style.color = '#1A7A3C';
+  } else {
+    vatRow.classList.add('minus');
+    document.getElementById('an-vat').style.color = '';
+  }
+
+  document.getElementById('an-bracket-box').innerHTML =
+    '적용 세율 구간: <b>' + bracket + '</b> · 실효세율 ' +
+    (annualGross > 0 ? ((totalTax / annualGross) * 100).toFixed(1) : '0.0') + '%<br>' +
+    '※ 단순 추정치입니다. 실제 세액은 공인세무사 확인을 권장합니다.';
+
+  const el = document.getElementById('an-aftertax');
+  el.textContent = won(afterTax);
+  el.className = 'af-val ' + (afterTax >= 0 ? 'positive' : 'negative');
+}
+
+// ── 추정표 ──────────────────────────────────────────
+let simPlatform = 'ab';
+
+function openSimModal() {
+  simPlatform = 'ab';
+  document.getElementById('sim-tab-ab').classList.add('on');
+  document.getElementById('sim-tab-bk').classList.remove('on');
+  buildSimTable();
+  document.getElementById('sim-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSimModal() {
+  document.getElementById('sim-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleModalClick(e) {
+  if (e.target === document.getElementById('sim-modal')) closeSimModal();
+}
+
+function setSimTab(t) {
+  simPlatform = t;
+  document.getElementById('sim-tab-ab').classList.toggle('on', t === 'ab');
+  document.getElementById('sim-tab-bk').classList.toggle('on', t === 'bk');
+  buildSimTable();
+}
+
+// 단일 시나리오 연간 세후순수익 계산 (공통 설정 재사용)
+function calcScenarioAfterTax(wdPrice, totalNights, platform) {
+  const fee = platform === 'ab' ? AB : BK;
+
+  // 주중:주말 = 11:4 비율
+  const totalRatio = 11 + 4;
+  const wdN = Math.round(totalNights * 11 / totalRatio);
+  const weN = totalNights - wdN;
+
+  // 주말 단가
+  const { wePrice } = getWePrice();
+  const wePriceRatio = wePrice / (parseFloat(document.getElementById('wd-price').value) || 1);
+  const weP = wdPrice * wePriceRatio;
+
+  // 할인
+  const discMult = 1 - getTotalDisc() / 100;
+  const gross = (wdPrice * discMult * wdN + weP * discMult * weN);
+  const feeAmt = gross * fee;
+  const net = gross - feeAmt;  // 호스트 실수령 (월)
+
+  // 연간
+  const annualGross = gross * 12;
+  const annualFee   = feeAmt * 12;
+  const annualNet   = net * 12;
+  const annualCost  = getCostTotal() * 12;
+
+  // 부가세
+  let vatAmt = 0;
+  if (taxType === 'simple') {
+    vatAmt = annualGross <= 48000000 ? 0 : annualGross * 0.025;
+  } else {
+    const vatCredit = parseFloat(document.getElementById('vat-input').value) || 0;
+    vatAmt = Math.max(0, annualGross * 0.10 - vatCredit);
+  }
+
+  const preTax = annualNet - annualCost - vatAmt;
+
+  // 경비율
+  const useRef = annualGross >= 36000000;
+  let taxBase = 0;
+  if (!useRef) {
+    taxBase = Math.max(0, annualGross * (1 - 0.764));
+  } else {
+    const purchase = parseFloat(document.getElementById('ref-purchase').value) || 0;
+    const labor    = parseFloat(document.getElementById('ref-labor').value)    || 0;
+    const rentTax  = parseFloat(document.getElementById('ref-rent-tax').value) || 0;
+    taxBase = Math.max(0, annualGross - (purchase + labor + rentTax) - annualGross * 0.148);
+  }
+
+  const persons   = parseInt(document.getElementById('deduction-persons').value) || 1;
+  const deduction = persons * 1500000;
+  const finalBase = Math.max(0, taxBase - deduction);
+
+  const { tax: incomeTax } = calcIncomeTax(finalBase);
+  const localTax = incomeTax * 0.1;
+
+  return preTax - incomeTax - localTax;
+}
+
+function buildSimTable() {
+  const baseWdPrice   = parseFloat(document.getElementById('wd-price').value) || 100000;
+  const baseWdNights  = parseInt(document.getElementById('wd-nights').value)  || 15;
+  const baseWeNights  = parseInt(document.getElementById('we-nights').value)  || 6;
+  const baseTotalNights = baseWdNights + baseWeNights;
+
+  // 가로축: 주중단가 (±5만원, 만원 단위 → 11개)
+  const priceStep = 10000;
+  const priceRange = 5;
+  const prices = [];
+  for (let d = -priceRange; d <= priceRange; d++) {
+    prices.push(baseWdPrice + d * priceStep);
+  }
+
+  // 세로축: 운영일수 (±5일, 최대 30일 → 최대 11개)
+  const nightsRange = 5;
+  const nights = [];
+  for (let d = -nightsRange; d <= nightsRange; d++) {
+    const n = baseTotalNights + d;
+    if (n >= 1 && n <= 30) nights.push(n);
+  }
+
+  // 모든 셀 값 계산
+  const values = nights.map(n => prices.map(p => calcScenarioAfterTax(p, n, simPlatform)));
+  const allVals = values.flat();
+  const minV = Math.min(...allVals);
+  const maxV = Math.max(...allVals);
+
+  function colorClass(v, isRow, isCol) {
+    if (isRow && isCol) return 'cur-both';
+    if (isRow) return 'cur-row';
+    if (isCol) return 'cur-col';
+    if (v < 0)              return 'c-neg';
+    const range = maxV - minV;
+    if (range === 0)        return 'c-mid';
+    const ratio = (v - minV) / range;
+    if (ratio < 0.2)  return 'c-low';
+    if (ratio < 0.5)  return 'c-mid';
+    if (ratio < 0.8)  return 'c-high';
+    return 'c-top';
+  }
+
+  function fmtM(v) {
+    const m = Math.round(v / 10000);
+    return (m >= 0 ? '' : '−') + Math.abs(m).toLocaleString() + '만';
+  }
+
+  // 헤더
+  let html = '<thead><tr>';
+  html += '<th class="row-header">운영일↓ / 단가→</th>';
+  prices.forEach(p => {
+    const isBase = p === baseWdPrice;
+    html += `<th${isBase ? ' style="background:#D0E4FF;color:#1D6FCC;"' : ''}>${(p/10000).toFixed(0)}만원</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  nights.forEach((n, ri) => {
+    const isBaseN = n === baseTotalNights;
+    html += '<tr>';
+    html += `<td class="row-label"${isBaseN ? ' style="background:#FFE8A0;color:#7A5A00;"' : ''}>${n}박</td>`;
+    prices.forEach((p, ci) => {
+      const isBaseP = p === baseWdPrice;
+      const cls = colorClass(values[ri][ci], isBaseN, isBaseP);
+      html += `<td class="${cls}">${fmtM(values[ri][ci])}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+
+  document.getElementById('sim-table').innerHTML = html;
+
+  // 메타 정보
+  const feeLabel = simPlatform === 'ab' ? '에어비앤비 15.5%' : '부킹닷컴 17.5%';
+  const taxLabel = taxType === 'simple' ? '간이과세' : '일반과세';
+  document.getElementById('sim-meta').innerHTML =
+    `플랫폼: <b>${feeLabel}</b> · 과세: <b>${taxLabel}</b> · 주중:주말 <b>11:4</b> 비율<br>` +
+    `현재 단가 <b>${(baseWdPrice/10000).toFixed(0)}만원</b> · 현재 운영 <b>${baseTotalNights}박</b> (■ 강조셀)`;
+}
+
+// ── 초기화 ────────────────────────────────────────
+const now = new Date();
+document.getElementById('month-pick').value =
+  now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+updateMultBadge();
+onNightsInput('wd');
+calc();
+</script>
+</body>
+</html>
