@@ -389,7 +389,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <div class="ai-wrap">
     <div class="pt">🤖 AI 수익 최적화 조언</div>
     <p class="ai-intro">
-      현재 계산 결과를 Gemini AI에 전달하여 수익 극대화 전략을 제안받습니다. API 키는 서버 환경변수에만 보관되며 브라우저에 노출되지 않습니다.
+      현재 계산 결과를 Claude AI에 전달하여 수익 극대화 전략을 제안받습니다. API 키는 서버 환경변수에만 보관되며 브라우저에 노출되지 않습니다.
     </p>
     <div style="margin-bottom:12px">
       <button class="ai-req-btn" id="ai-btn" onclick="askAI()">✨ 조언 받기</button>
@@ -780,7 +780,7 @@ async function askAI() {
     const res = await fetch('/api/ai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: buildPrompt(lastCalcData) }] }] })
+      body: JSON.stringify({ prompt: buildPrompt(lastCalcData) })
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -791,7 +791,7 @@ async function askAI() {
       throw new Error(msg);
     }
     const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '응답을 받지 못했습니다.';
+    const text = data.text || '응답을 받지 못했습니다.';
     resp.innerHTML = mdToHtml(text);
     resp.style.display = 'block';
   } catch (e) {
