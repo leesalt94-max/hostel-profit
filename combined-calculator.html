@@ -155,6 +155,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .divider span{font-size:10px;font-weight:700;color:var(--tm);white-space:nowrap}
 
 .fn{margin-top:14px;padding:12px 14px;background:var(--bg);border-radius:8px;font-size:10.5px;color:var(--tm);line-height:1.8}
+.load-notice{display:none;border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:12px;line-height:1.75;background:linear-gradient(135deg,#FFFBEB,#F5F3FF);border:1px solid rgba(217,119,6,.3)}
+.load-notice.show{display:block}
+.load-notice strong{font-weight:700;color:var(--tp)}
+.load-tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;margin-right:4px}
+.load-tag.a{background:var(--amb-l);color:var(--amb);border:1px solid rgba(217,119,6,.3)}
+.load-tag.h{background:var(--pur-l);color:var(--pur);border:1px solid #DDD6FE}
 </style>
 </head>
 <body>
@@ -172,6 +178,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     을 합산하여 총 법인 과세소득 및 최종 수취액을 계산합니다.
   </p>
 </div>
+
+<div class="load-notice" id="load-notice"></div>
 
 <!-- ① 법인 대행 수익 -->
 <div class="panel">
@@ -658,9 +666,57 @@ function calculate() {
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// ── localStorage 불러오기 ──
+function loadFromStorage() {
+  const agencyRaw = localStorage.getItem('hpa_agency');
+  const hostelRaw = localStorage.getItem('hpa_hostel');
+  const loaded = [];
+
+  if (agencyRaw) {
+    try {
+      const d = JSON.parse(agencyRaw);
+      propCount = Math.min(d.propCount || 1, 5);
+      document.querySelectorAll('.cnt-tab').forEach((b, i) => b.classList.toggle('on', i + 1 === propCount));
+      renderPropRows();
+      for (let i = 1; i <= propCount; i++) {
+        const el = g(`prop-rev-${i}`);
+        if (el && d.revenues?.[i - 1] !== undefined) el.value = d.revenues[i - 1];
+      }
+      if (d.agencyRate) g('agency-rate').value = d.agencyRate;
+      if (d.corpCost !== undefined) g('corp-cost').value = d.corpCost;
+      const savedTime = d.savedAt ? new Date(d.savedAt).toLocaleString('ko-KR') : '';
+      loaded.push(`<span class="load-tag a">대행 수익</span>운영자별 세금 시뮬레이터에서 불러왔습니다${savedTime ? ` (${savedTime})` : ''}`);
+    } catch(e) {}
+  }
+
+  if (hostelRaw) {
+    try {
+      const d = JSON.parse(hostelRaw);
+      if (d.rooms) { Object.assign(rooms, {4: +d.rooms[4]||0, 6: +d.rooms[6]||0, 8: +d.rooms[8]||0}); updateRoomUI(); }
+      if (d.wd4) g('hwd4').value = d.wd4;
+      if (d.wd6) g('hwd6').value = d.wd6;
+      if (d.wd8) g('hwd8').value = d.wd8;
+      if (d.weMult) { g('h-mult').value = d.weMult; g('hmult-d').textContent = (+d.weMult).toFixed(2) + '×'; }
+      if (d.occWd) { g('hocc-wd').value = d.occWd; g('hocc-wd-d').textContent = d.occWd; }
+      if (d.occWe) { g('hocc-we').value = d.occWe; g('hocc-we-d').textContent = d.occWe; }
+      if (d.monthlyCost) g('h-cost').value = d.monthlyCost;
+      updateWe();
+      const savedTime = d.savedAt ? new Date(d.savedAt).toLocaleString('ko-KR') : '';
+      loaded.push(`<span class="load-tag h">호스텔 수익</span>호스텔 수익 계산기에서 불러왔습니다${savedTime ? ` (${savedTime})` : ''}`);
+    } catch(e) {}
+  }
+
+  if (loaded.length > 0) {
+    const notice = g('load-notice');
+    notice.className = 'load-notice show';
+    notice.innerHTML = `<strong>🔗 연동 데이터 자동 입력됨</strong><br>${loaded.join('<br>')}`;
+  }
+}
+
 // ── 초기화 ──
 renderPropRows();
 updateRoomUI();
+loadFromStorage();
 autoCalc();
 </script>
 </body>

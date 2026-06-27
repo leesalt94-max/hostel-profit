@@ -245,6 +245,34 @@
       color: var(--text-muted);
       margin-top: auto;
     }
+
+    .saved-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+      background: #D1FAE5;
+      color: #065F46;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .linked-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+      background: linear-gradient(135deg, #FEF3C7, #EDE9FE);
+      color: #92400E;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
   </style>
 </head>
 <body>
@@ -267,7 +295,7 @@
       </a>
 
       <!-- 카드 2: 외국인도시민박업 운영자별 독립 계산 프로그램 -->
-      <a href="tax-simulator.html" class="card card-tax">
+      <a href="tax-simulator.html" class="card card-tax" id="card-tax">
         <div>
           <div class="icon-wrapper">🏦</div>
           <h2>운영자별 독립 세금 시뮬레이터</h2>
@@ -277,7 +305,7 @@
       </a>
 
       <!-- 카드 3: 법인 호스텔 수익 계산기 -->
-      <a href="hostel-calculator.html" class="card card-hostel">
+      <a href="hostel-calculator.html" class="card card-hostel" id="card-hostel">
         <div>
           <div class="icon-wrapper">🏨</div>
           <h2>법인 호스텔 수익 계산기</h2>
@@ -287,7 +315,7 @@
       </a>
 
       <!-- 카드 4: 법인 통합 수익 계산기 -->
-      <a href="combined-calculator.html" class="card card-combined">
+      <a href="combined-calculator.html" class="card card-combined" id="card-combined">
         <div>
           <div class="icon-wrapper">🔗</div>
           <h2>법인 통합 수익 계산기</h2>
@@ -301,5 +329,23 @@
       &copy; 2026 Hostel Profit Analyzer. All rights reserved.
     </footer>
   </div>
+
+<script>
+(function() {
+  const agency = localStorage.getItem('hpa_agency');
+  const hostel = localStorage.getItem('hpa_hostel');
+
+  function addBadge(cardId, html) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    const h2 = card.querySelector('h2');
+    if (h2) h2.insertAdjacentHTML('beforeend', html);
+  }
+
+  if (agency) addBadge('card-tax', '<span class="saved-badge">✓ 저장됨</span>');
+  if (hostel) addBadge('card-hostel', '<span class="saved-badge">✓ 저장됨</span>');
+  if (agency || hostel) addBadge('card-combined', '<span class="linked-badge">🔗 연동 가능</span>');
+})();
+</script>
 </body>
 </html>
