@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>법인 호스텔 계산기</title>
+<link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<div class="top-nav">
+  <a href="index.html" class="back-link">← 포털</a>
+  <span class="scenario-badge hs">법인 호스텔</span>
+</div>
+
+<div class="wrap">
+  <div class="page-hdr">
+    <h1>법인 호스텔 계산기</h1>
+    <p>객실 구성 선택 → 침대 단가·점유율 → 운영비 → 법인세 → 최종 수취액</p>
+  </div>
+
+  <!-- ① 객실 구성 -->
+  <div class="panel hs-border">
+    <div class="pt">🏨 객실 구성</div>
+    <div class="room-grid">
+      <div class="room-card active" id="card-4">
+        <div class="rc-emoji">🛏</div>
+        <div class="rc-type">4인실</div>
+        <div class="rc-beds">침대 4개 / 객실</div>
+        <div class="counter-row" style="justify-content:center">
+          <button class="cnt-btn" onclick="changeRoom(4,-1)">−</button>
+          <div class="rc-num" id="num-4">2</div>
+          <button class="cnt-btn" onclick="changeRoom(4,1)">+</button>
+        </div>
+      </div>
+      <div class="room-card zero" id="card-6">
+        <div class="rc-emoji">🛏</div>
+        <div class="rc-type">6인실</div>
+        <div class="rc-beds">침대 6개 / 객실</div>
+        <div class="counter-row" style="justify-content:center">
+          <button class="cnt-btn" onclick="changeRoom(6,-1)">−</button>
+          <div class="rc-num zero" id="num-6">0</div>
+          <button class="cnt-btn" onclick="changeRoom(6,1)">+</button>
+        </div>
+      </div>
+      <div class="room-card active" id="card-8">
+        <div class="rc-emoji">🛏</div>
+        <div class="rc-type">8인실</div>
+        <div class="rc-beds">침대 8개 / 객실</div>
+        <div class="counter-row" style="justify-content:center">
+          <button class="cnt-btn" onclick="changeRoom(8,-1)">−</button>
+          <div class="rc-num" id="num-8">1</div>
+          <button class="cnt-btn" onclick="changeRoom(8,1)">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="info-box wd-bg" id="room-summary"></div>
+  </div>
+
+  <!-- ② 단가 설정 -->
+  <div class="panel hs-border">
+    <div class="pt">💰 객실별 주중 단가 (1박·침대 1개 기준)</div>
+    <table class="price-table">
+      <thead>
+        <tr>
+          <th>객실</th>
+          <th style="text-align:right">주중 단가</th>
+          <th style="text-align:right">주말 단가</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="ptr" id="ptr-4">
+          <td class="pt-label">🛏 4인실</td>
+          <td><div class="ir-sm"><input type="number" id="wd4" value="30000" step="1000" oninput="updateWePrices();autoCalc()"><span class="iu">원</span></div></td>
+          <td class="we-td" id="we4-disp">—</td>
+        </tr>
+        <tr class="ptr" id="ptr-6">
+          <td class="pt-label">🛏 6인실</td>
+          <td><div class="ir-sm"><input type="number" id="wd6" value="35000" step="1000" oninput="updateWePrices();autoCalc()"><span class="iu">원</span></div></td>
+          <td class="we-td" id="we6-disp">—</td>
+        </tr>
+        <tr class="ptr" id="ptr-8">
+          <td class="pt-label">🛏 8인실</td>
+          <td><div class="ir-sm"><input type="number" id="wd8" value="25000" step="1000" oninput="updateWePrices();autoCalc()"><span class="iu">원</span></div></td>
+          <td class="we-td" id="we8-disp">—</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="psec">
+      <div class="pst">주말 단가 배율 (금+토)</div>
+      <div class="slider-val-row">
+        <span class="slider-big we" id="mult-disp">1.30</span>
+        <span class="slider-unit">× (주중의 <span id="mult-txt">1.30</span>배)</span>
+      </div>
+      <input type="range" id="we-mult" min="1.0" max="3.0" step="0.05" value="1.30"
+        oninput="document.getElementById('mult-disp').textContent=(+this.value).toFixed(2);document.getElementById('mult-txt').textContent=(+this.value).toFixed(2);updateWePrices();autoCalc()">
+      <div class="slider-labels"><span>1.0×</span><span>1.5×</span><span>2.0×</span><span>2.5×</span><span>3.0×</span></div>
+    </div>
+  </div>
+
+  <!-- ③ 점유율 -->
+  <div class="panel hs-border">
+    <div class="pt">📊 침대 점유율</div>
+    <div class="two-col">
+      <div class="slider-field">
+        <label>주중 점유율 (월~목+일)</label>
+        <div class="slider-val-row">
+          <span class="slider-big wd" id="occ-wd-disp">65</span>
+          <span class="slider-unit">%</span>
+        </div>
+        <input type="range" id="occ-wd" min="0" max="100" step="5" value="65"
+          oninput="document.getElementById('occ-wd-disp').textContent=this.value;autoCalc()">
+        <div class="slider-labels"><span>0%</span><span>50%</span><span>100%</span></div>
+      </div>
+      <div class="slider-field">
+        <label>주말 점유율 (금+토)</label>
+        <div class="slider-val-row">
+          <span class="slider-big we" id="occ-we-disp">85</span>
+          <span class="slider-unit">%</span>
+        </div>
+        <input type="range" id="occ-we" min="0" max="100" step="5" value="85"
+          oninput="document.getElementById('occ-we-disp').textContent=this.value;autoCalc()">
+        <div class="slider-labels"><span>0%</span><span>50%</span><span>100%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 플랫폼 -->
+  <div class="panel hs-border">
+    <div class="pt">🌐 플랫폼 수수료</div>
+    <div class="tab-row" id="plat-tabs">
+      <button class="tab-btn on-hs" onclick="setPlatform('air',this)">에어비앤비 (15.5%)</button>
+      <button class="tab-btn" onclick="setPlatform('book',this)">부킹닷컴 (17.5%)</button>
+      <button class="tab-btn" onclick="setPlatform('direct',this)">직접예약 (0%)</button>
+      <button class="tab-btn" onclick="setPlatform('mix',this)">혼합</button>
+    </div>
+    <div id="mix-panel" style="display:none; margin-top:10px">
+      <div class="igrid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="ig"><label>에어비앤비</label><div class="ir hs"><input type="number" id="mix-air" value="50" min="0" max="100" step="5" oninput="checkMix();autoCalc()"><span class="iu">%</span></div></div>
+        <div class="ig"><label>부킹닷컴</label><div class="ir hs"><input type="number" id="mix-book" value="30" min="0" max="100" step="5" oninput="checkMix();autoCalc()"><span class="iu">%</span></div></div>
+        <div class="ig"><label>직접예약</label><div class="ir hs"><input type="number" id="mix-direct" value="20" min="0" max="100" step="5" oninput="checkMix();autoCalc()"><span class="iu">%</span></div></div>
+      </div>
+      <div id="mix-hint" style="font-size:10.5px;color:var(--co);margin-top:4px">합계: 100% — 유효</div>
+    </div>
+  </div>
+
+  <!-- ⑤ 월 운영비용 -->
+  <div class="panel hs-border">
+    <div class="pt">🏢 월 운영비용</div>
+    <div class="igrid">
+      <div class="ig"><label>임대료</label><div class="ir hs"><input type="number" id="c-rent" value="3000000" step="100000" oninput="autoCalc()"><span class="iu">원</span></div></div>
+      <div class="ig"><label>인건비</label><div class="ir hs"><input type="number" id="c-labor" value="2000000" step="100000" oninput="autoCalc()"><span class="iu">원</span></div></div>
+      <div class="ig"><label>공과금 (전기·수도·가스)</label><div class="ir hs"><input type="number" id="c-util" value="500000" step="50000" oninput="autoCalc()"><span class="iu">원</span></div></div>
+      <div class="ig"><label>청소·세탁비</label><div class="ir hs"><input type="number" id="c-clean" value="300000" step="50000" oninput="autoCalc()"><span class="iu">원</span></div></div>
+      <div class="ig"><label>소모품·비품</label><div class="ir hs"><input type="number" id="c-goods" value="200000" step="50000" oninput="autoCalc()"><span class="iu">원</span></div></div>
+      <div class="ig"><label>법인 유지비 (월 환산)</label><div class="ir hs"><input type="number" id="c-corp" value="334000" step="10000" oninput="autoCalc()"><span class="iu">원</span></div></div>
+      <div class="ig"><label>대출 이자</label><div class="ir hs"><input type="number" id="c-loan" value="0" step="100000" oninput="autoCalc()"><span class="iu">원</span></div></div>
+      <div class="ig"><label>기타</label><div class="ir hs"><input type="number" id="c-etc" value="0" step="50000" oninput="autoCalc()"><span class="iu">원</span></div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--dv)">
+      <span style="font-size:12px;font-weight:700;color:var(--ts)">총 월 운영비용</span>
+      <span style="font-size:18px;font-weight:800;color:var(--red)" id="cost-total">—</span>
+    </div>
+  </div>
+
+  <!-- ⑥ 이익 수취 방식 -->
+  <div class="panel hs-border">
+    <div class="pt">⚖️ 이익 수취 방식</div>
+    <div class="radio-grid">
+      <div class="radio-item sel-hs" id="ri-div" onclick="setPayout('div')">
+        <div class="radio-dot"><div class="radio-inner"></div></div>
+        <div class="radio-text">
+          <strong>배당으로 수취</strong>
+          <span>법인세 후 배당소득세 15.4%<br>4대보험 없음</span>
+        </div>
+      </div>
+      <div class="radio-item" id="ri-sal" onclick="setPayout('sal')">
+        <div class="radio-dot"><div class="radio-inner"></div></div>
+        <div class="radio-text">
+          <strong>급여로 수취</strong>
+          <span>법인 비용 처리로 절세<br>근로소득세 + 4대보험</span>
+        </div>
+      </div>
+    </div>
+    <div id="sal-section" style="display:none; margin-top:12px">
+      <div class="pst">급여 설정</div>
+      <div class="igrid">
+        <div class="ig"><label>대표이사 연간 급여</label><div class="ir hs"><input type="number" id="salary" value="36000000" step="1000000" oninput="autoCalc()"><span class="iu">원/년</span></div></div>
+        <div class="ig"><label>기타 소득 (연간)</label><div class="ir hs"><input type="number" id="other-inc" value="0" step="1000000" oninput="autoCalc()"><span class="iu">원</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 결과 -->
+  <div id="result-section" style="display:none">
+    <div id="hero"></div>
+    <div class="panel" id="room-rev-panel"></div>
+    <div class="panel" id="income-panel"></div>
+    <div class="panel" id="tax-panel"></div>
+    <div class="footnote">
+      ※ 주중 월 21.74박 (5/7×30.44), 주말 월 8.70박 (2/7×30.44) 기준.<br>
+      ※ 법인세: 과세표준 2억 이하 9%, 초과분 19% + 지방소득세 10%.<br>
+      ※ 배당소득세: 금융소득 2천만원 이하 15.4%, 초과분 종합과세.<br>
+      ※ 4대보험: 건강보험 3.545%, 장기요양 0.459%, 국민연금 4.5%(상한 660만), 고용보험 0.9%.
+    </div>
+  </div>
+
+  <button class="save-btn" onclick="saveData()">💾 저장 (통합 계산기 연동)</button>
+  <div class="save-ok" id="save-ok">✅ 저장되었습니다!</div>
+</div>
+
+<script src="js/tax.js"></script>
+<script src="js/store.js"></script>
+<script>
+// ── 상태 ──
+const rooms = { 4: 2, 6: 0, 8: 1 };
+let platform = 'air';
+let payout = 'div';
+let autoTimer;
+
+const v = id => document.getElementById(id).value;
+
+// ── 객실 ──
+function changeRoom(type, d) {
+  rooms[type] = Math.max(0, Math.min(20, rooms[type] + d));
+  updateRoomUI();
+  autoCalc();
+}
+
+function updateRoomUI() {
+  [4, 6, 8].forEach(t => {
+    const n = rooms[t];
+    const numEl  = document.getElementById('num-' + t);
+    const cardEl = document.getElementById('card-' + t);
+    const rowEl  = document.getElementById('ptr-' + t);
+    numEl.textContent  = n;
+    numEl.className    = 'rc-num' + (n === 0 ? ' zero' : '');
+    cardEl.className   = 'room-card' + (n === 0 ? ' zero' : ' active');
+    if (rowEl) rowEl.className = 'ptr' + (n === 0 ? ' dim' : '');
+  });
+
+  const n4 = rooms[4], n6 = rooms[6], n8 = rooms[8];
+  const totalRooms = n4 + n6 + n8;
+  const totalBeds  = n4*4 + n6*6 + n8*8;
+  const sum = document.getElementById('room-summary');
+  if (totalRooms === 0) {
+    sum.className = 'info-box red-bg';
+    sum.textContent = '객실을 최소 1개 이상 선택해주세요.';
+    return;
+  }
+  sum.className = 'info-box wd-bg';
+  const parts = [];
+  if (n4) parts.push(`4인실 ${n4}개 (침대 ${n4*4}개)`);
+  if (n6) parts.push(`6인실 ${n6}개 (침대 ${n6*6}개)`);
+  if (n8) parts.push(`8인실 ${n8}개 (침대 ${n8*8}개)`);
+  sum.innerHTML = parts.join(' + ') + ` &nbsp;|&nbsp; 총 <strong>${totalRooms}개 객실</strong> · 총 침대 <strong>${totalBeds}개</strong>`;
+  updateWePrices();
+}
+
+// ── 단가 ──
+function updateWePrices() {
+  const mult = +v('we-mult') || 1.3;
+  [4, 6, 8].forEach(t => {
+    const wd = +v('wd' + t) || 0;
+    const we = Math.round(wd * mult);
+    const disp = document.getElementById('we' + t + '-disp');
+    if (disp) disp.textContent = we ? we.toLocaleString('ko-KR') + '원' : '—';
+  });
+}
+
+// ── 플랫폼 ──
+function setPlatform(p, btn) {
+  platform = p;
+  document.querySelectorAll('#plat-tabs .tab-btn').forEach(b => b.className = 'tab-btn');
+  btn.className = 'tab-btn on-hs';
+  document.getElementById('mix-panel').style.display = p === 'mix' ? '' : 'none';
+  autoCalc();
+}
+
+function getEffFee() {
+  if (platform === 'air')   return 0.155;
+  if (platform === 'book')  return 0.175;
+  if (platform === 'direct') return 0;
+  const a = +v('mix-air')||0, b = +v('mix-book')||0, d = +v('mix-direct')||0;
+  const s = a + b + d;
+  return s ? (a*0.155 + b*0.175) / s : 0.155;
+}
+
+function checkMix() {
+  const s = (+v('mix-air')||0) + (+v('mix-book')||0) + (+v('mix-direct')||0);
+  const el = document.getElementById('mix-hint');
+  el.textContent = `합계: ${s}% — ` + (Math.abs(s-100)<1 ? '유효' : '⚠️ 합계가 100%여야 합니다');
+  el.style.color = Math.abs(s-100)<1 ? 'var(--co)' : 'var(--red)';
+}
+
+// ── 이익 수취 ──
+function setPayout(m) {
+  payout = m;
+  document.getElementById('ri-div').className = 'radio-item' + (m==='div'?' sel-hs':'');
+  document.getElementById('ri-sal').className = 'radio-item' + (m==='sal'?' sel-hs':'');
+  document.getElementById('sal-section').style.display = m==='sal' ? '' : 'none';
+  autoCalc();
+}
+
+// ── 계산 ──
+function autoCalc() {
+  clearTimeout(autoTimer);
+  autoTimer = setTimeout(calc, 200);
+}
+
+function calc() {
+  const n4 = rooms[4], n6 = rooms[6], n8 = rooms[8];
+  const totalRooms = n4 + n6 + n8;
+  if (!totalRooms) return;
+
+  const mult = +v('we-mult') || 1.3;
+  const wd4 = +v('wd4')||0, wd6 = +v('wd6')||0, wd8 = +v('wd8')||0;
+  const we4 = wd4*mult, we6 = wd6*mult, we8 = wd8*mult;
+  const wdO = +v('occ-wd')/100, weO = +v('occ-we')/100;
+  const fee = getEffFee();
+
+  // 객실별 월 매출
+  const revRoom = (wdP, weP, cnt) => {
+    const gross = (wdP*wdO*WD_NIGHTS + weP*weO*WE_NIGHTS) * cnt;
+    return { gross, net: gross*(1-fee) };
+  };
+  const r4 = revRoom(wd4, we4, n4);
+  const r6 = revRoom(wd6, we6, n6);
+  const r8 = revRoom(wd8, we8, n8);
+
+  const grossMo = r4.gross + r6.gross + r8.gross;
+  const netMo   = r4.net   + r6.net   + r8.net;
+  const totalBeds = n4*4 + n6*6 + n8*8;
+
+  // 비용
+  const costs = {
+    rent:  +v('c-rent')||0, labor: +v('c-labor')||0,
+    util:  +v('c-util')||0, clean: +v('c-clean')||0,
+    goods: +v('c-goods')||0, corp: +v('c-corp')||0,
+    loan:  +v('c-loan')||0, etc:   +v('c-etc')||0,
+  };
+  const costMo  = Object.values(costs).reduce((a,b)=>a+b,0);
+  const profMo  = netMo - costMo;
+
+  const grossAn = grossMo*12, netAn = netMo*12;
+  const costAn  = costMo*12,  profAn = profMo*12;
+
+  document.getElementById('cost-total').textContent = won(costMo);
+
+  // 세금
+  const salary   = +v('salary')||0;
+  const otherInc = +v('other-inc')||0;
+  const tx = calcTakeHome(profAn, payout, salary, otherInc);
+
+  const feeLabel = { air:'에어비앤비 15.5%', book:'부킹닷컴 17.5%', direct:'직접예약 0%', mix:`혼합 ${(fee*100).toFixed(1)}%` }[platform];
+
+  document.getElementById('result-section').style.display = '';
+
+  // 히어로
+  document.getElementById('hero').innerHTML = `
+    <div class="hero-card hs">
+      <div class="hero-eyebrow">연간 최종 수취액</div>
+      <div class="hero-amount">${won(Math.max(0,tx.takeHome))}</div>
+      <div class="hero-sub">
+        총 ${totalRooms}개 객실 · 침대 ${totalBeds}개 &nbsp;|&nbsp; ${feeLabel}
+        &nbsp;|&nbsp; ${payout==='div'?'배당':'급여'} 방식
+      </div>
+      <div class="hero-grid">
+        <div class="hero-cell"><div class="hero-cell-label">월 총매출 (등록가 기준)</div><div class="hero-cell-val">${won(grossMo)}</div></div>
+        <div class="hero-cell"><div class="hero-cell-label">월 영업이익 (세전)</div><div class="hero-cell-val">${won(profMo)}</div></div>
+        <div class="hero-cell"><div class="hero-cell-label">법인세</div><div class="hero-cell-val">${won(tx.ct)}</div></div>
+      </div>
+    </div>`;
+
+  // 객실별 매출
+  const roomRows = [
+    n4>0 ? `<div class="li"><span class="ll">🛏 4인실 ${n4}개 (침대 ${n4*4}개) — 주중 ${won(wd4)}/주말 ${won(we4)}</span><span class="lv hs">${won(r4.net)}</span></div>` : '',
+    n6>0 ? `<div class="li"><span class="ll">🛏 6인실 ${n6}개 (침대 ${n6*6}개) — 주중 ${won(wd6)}/주말 ${won(we6)}</span><span class="lv hs">${won(r6.net)}</span></div>` : '',
+    n8>0 ? `<div class="li"><span class="ll">🛏 8인실 ${n8}개 (침대 ${n8*8}개) — 주중 ${won(wd8)}/주말 ${won(we8)}</span><span class="lv hs">${won(r8.net)}</span></div>` : '',
+  ].join('');
+
+  document.getElementById('room-rev-panel').innerHTML = `
+    <div class="pt">🏨 객실별 월 순매출 (수수료 ${(fee*100).toFixed(1)}% 차감 후)</div>
+    ${roomRows}
+    <div class="li sub"><span class="ll">합계 월 순매출</span><span class="lv">${won(netMo)}</span></div>
+    <div class="li" style="margin-top:4px"><span class="ll">연간 순매출</span><span class="lv hs">${won(netAn)}</span></div>`;
+
+  // 손익
+  const costItems = [
+    ['임대료', costs.rent], ['인건비', costs.labor], ['공과금', costs.util],
+    ['청소·세탁비', costs.clean], ['소모품·비품', costs.goods],
+    ['법인 유지비', costs.corp], ['대출 이자', costs.loan], ['기타', costs.etc],
+  ].filter(([,v])=>v>0)
+   .map(([l,v])=>`<div class="li"><span class="ll">${l}</span><span class="lv ng">−${won(v)}</span></div>`).join('');
+
+  document.getElementById('income-panel').innerHTML = `
+    <div class="pt">📋 월 손익계산서</div>
+    <div class="li"><span class="ll">총매출 (등록가)</span><span class="lv">${won(grossMo)}</span></div>
+    <div class="li"><span class="ll">플랫폼 수수료 차감 (${(fee*100).toFixed(1)}%)</span><span class="lv ng">−${won(grossMo-netMo)}</span></div>
+    <div class="li sub"><span class="ll">수수료 후 순매출</span><span class="lv">${won(netMo)}</span></div>
+    ${costItems}
+    <div class="li sub"><span class="ll">총 운영비용</span><span class="lv ng">−${won(costMo)}</span></div>
+    <div class="li total hs-bg"><span class="ll">월 영업이익 (세전)</span><span class="lv">${won(profMo)}</span></div>
+    <div class="li" style="margin-top:4px"><span class="ll">연간 영업이익</span><span class="lv hs">${won(profAn)}</span></div>`;
+
+  // 세금 상세
+  document.getElementById('tax-panel').innerHTML = `
+    <div class="pt">🏦 연간 법인세 시뮬레이션</div>
+    <div class="li"><span class="ll">연간 세전 영업이익</span><span class="lv">${won(profAn)}</span></div>
+    ${payout==='sal'?`<div class="li"><span class="ll">대표이사 급여 (비용 처리)</span><span class="lv ng">−${won(salary)}</span></div>`:''}
+    <div class="li sub"><span class="ll">법인 과세표준</span><span class="lv">${won(tx.taxable)}</span></div>
+    <div class="li"><span class="ll">법인세 (2억 이하 9%, 초과 19%)</span><span class="lv ng">−${won(tx.ct/1.1)}</span></div>
+    <div class="li"><span class="ll">법인 지방소득세 (10%)</span><span class="lv ng">−${won(tx.ct/1.1*0.1)}</span></div>
+    <div class="li sub"><span class="ll">법인 세후 이익</span><span class="lv">${won(tx.afterCorp)}</span></div>
+    ${payout==='div'?`
+    <div class="li"><span class="ll">배당소득세 (15.4% 또는 종합과세)</span><span class="lv ng">−${won(tx.personalTax)}</span></div>
+    <div class="li total hs-bg"><span class="ll">연간 최종 수취액 (배당)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
+    <div class="li"><span class="ll">월 평균 수취액</span><span class="lv hs">${won(Math.max(0,tx.takeHome)/12)}</span></div>
+    `:`
+    <div class="li"><span class="ll">대표이사 급여</span><span class="lv">${won(salary)}</span></div>
+    <div class="li"><span class="ll">근로소득세 (지방세 포함)</span><span class="lv ng">−${won(tx.personalTax)}</span></div>
+    <div class="li"><span class="ll">4대보험 개인분</span><span class="lv ng">−${won(tx.ins)}</span></div>
+    ${tx.afterCorp>0?`<div class="li"><span class="ll">법인 잔여이익 배당 실수령</span><span class="lv ps">+${won(tx.afterCorp - dividendTax(tx.afterCorp, salary))}</span></div>`:''}
+    <div class="li total hs-bg"><span class="ll">연간 최종 수취액 (급여+배당)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
+    <div class="li"><span class="ll">월 평균 수취액</span><span class="lv hs">${won(Math.max(0,tx.takeHome)/12)}</span></div>
+    `}
+    <div class="li" style="margin-top:4px"><span class="ll">실효 수익률 (연간 순매출 대비)</span><span class="lv">${netAn>0?(Math.max(0,tx.takeHome)/netAn*100).toFixed(1):0}%</span></div>`;
+
+  // 자동 저장
+  Store.save('hostel', {
+    rooms: {...rooms},
+    wdPrices: { 4: +v('wd4')||0, 6: +v('wd6')||0, 8: +v('wd8')||0 },
+    weMult: +v('we-mult')||1.3,
+    wdOcc: +v('occ-wd'), weOcc: +v('occ-we'),
+    platform,
+    costs: {...costs},
+    payout, salary, otherInc,
+    computed: { grossMo, netMo, costMo, profMo, profAn, takeHome: Math.max(0,tx.takeHome) },
+  });
+}
+
+function saveData() {
+  calc();
+  const ok = document.getElementById('save-ok');
+  ok.className = 'save-ok show';
+  setTimeout(() => ok.className = 'save-ok', 2600);
+}
+
+// ── 초기화 ──
+(function init() {
+  const saved = Store.load('hostel');
+  if (saved) {
+    if (saved.rooms) { Object.assign(rooms, saved.rooms); }
+    setTimeout(() => {
+      if (saved.wdPrices) { [4,6,8].forEach(t => { const el=document.getElementById('wd'+t); if(el) el.value=saved.wdPrices[t]||0; }); }
+      if (saved.weMult) { document.getElementById('we-mult').value=saved.weMult; document.getElementById('mult-disp').textContent=saved.weMult.toFixed(2); document.getElementById('mult-txt').textContent=saved.weMult.toFixed(2); }
+      if (saved.wdOcc!=null) { document.getElementById('occ-wd').value=saved.wdOcc; document.getElementById('occ-wd-disp').textContent=saved.wdOcc; }
+      if (saved.weOcc!=null) { document.getElementById('occ-we').value=saved.weOcc; document.getElementById('occ-we-disp').textContent=saved.weOcc; }
+      if (saved.costs) { Object.entries(saved.costs).forEach(([k,val])=>{ const el=document.getElementById('c-'+k); if(el) el.value=val; }); }
+      if (saved.payout) setPayout(saved.payout);
+      if (saved.salary)   document.getElementById('salary').value=saved.salary;
+      if (saved.otherInc) document.getElementById('other-inc').value=saved.otherInc;
+      if (saved.platform) {
+        platform = saved.platform;
+        document.querySelectorAll('#plat-tabs .tab-btn').forEach(b => b.className='tab-btn');
+        const platMap = {'air':0,'book':1,'direct':2,'mix':3};
+        const idx = platMap[saved.platform];
+        if (idx != null) document.querySelectorAll('#plat-tabs .tab-btn')[idx].className='tab-btn on-hs';
+        document.getElementById('mix-panel').style.display = saved.platform==='mix' ? '' : 'none';
+      }
+      calc();
+    }, 50);
+  }
+  updateRoomUI();
+  updateWePrices();
+  autoCalc();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>법인 통합 수익 계산기</title>
+<link rel="stylesheet" href="css/common.css">
+<style>
+.refresh-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 14px; border: 1.5px solid var(--co); border-radius: 9px;
+  background: transparent; color: var(--co); font-size: 12px; font-weight: 600;
+  font-family: inherit; cursor: pointer; margin-left: auto; transition: all .15s;
+}
+.refresh-btn:hover { background: var(--co-l); }
+.profit-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; margin-bottom: 8px; }
+.profit-item.ag-item { background: var(--ag-l); border: 1px solid #FDE68A; }
+.profit-item.hs-item { background: var(--hs-l); border: 1px solid #DDD6FE; }
+.pi-icon { font-size: 22px; flex-shrink: 0; }
+.pi-body { flex: 1; }
+.pi-title { font-size: 12px; font-weight: 700; color: var(--tp); }
+.pi-sub { font-size: 10.5px; color: var(--ts); margin-top: 1px; line-height: 1.4; }
+.pi-amount { font-size: 18px; font-weight: 800; white-space: nowrap; }
+.pi-amount.ag { color: var(--ag); }
+.pi-amount.hs { color: var(--hs); }
+.total-profit-box { background: linear-gradient(135deg, #1e293b, #334155); border-radius: 12px; padding: 16px 18px; margin: 12px 0; color: #fff; }
+.tpb-label { font-size: 11px; font-weight: 600; opacity: .7; margin-bottom: 6px; letter-spacing: .06em; text-transform: uppercase; }
+.tpb-val { font-size: 32px; font-weight: 800; letter-spacing: -1.5px; }
+.tpb-sub { font-size: 11px; opacity: .65; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="top-nav">
+  <a href="index.html" class="back-link">← 포털</a>
+  <span class="scenario-badge co">통합 계산</span>
+  <button class="refresh-btn" onclick="reload()">↻ 데이터 새로고침</button>
+</div>
+
+<div class="wrap">
+  <div class="page-hdr">
+    <h1>법인 통합 수익 계산기</h1>
+    <p>운영대행 + 호스텔 수익을 하나의 법인으로 합산하여<br>최종 법인세 및 수취액을 계산합니다.</p>
+  </div>
+
+  <!-- 데이터 로드 현황 -->
+  <div class="panel co-border">
+    <div class="pt">📂 저장된 데이터 <button class="refresh-btn" onclick="reload()" style="font-size:11px;padding:4px 10px">↻ 새로고침</button></div>
+    <div id="data-status"></div>
+  </div>
+
+  <!-- 법인 합산 이익 -->
+  <div class="panel co-border" id="profit-panel" style="display:none">
+    <div class="pt">💼 법인 합산 과세이익</div>
+    <div id="profit-items"></div>
+    <div class="total-profit-box">
+      <div class="tpb-label">법인 합산 세전 이익</div>
+      <div class="tpb-val" id="total-pretax">—</div>
+      <div class="tpb-sub" id="total-pretax-sub">운영대행 + 호스텔</div>
+    </div>
+  </div>
+
+  <!-- 이익 수취 방식 -->
+  <div class="panel co-border" id="payout-panel" style="display:none">
+    <div class="pt">⚖️ 이익 수취 방식</div>
+    <div class="radio-grid">
+      <div class="radio-item" id="ri-div" onclick="setPayout('div')">
+        <div class="radio-dot"><div class="radio-inner"></div></div>
+        <div class="radio-text">
+          <strong>배당으로 수취</strong>
+          <span>법인세 후 배당소득세 15.4%<br>4대보험 없음</span>
+        </div>
+      </div>
+      <div class="radio-item" id="ri-sal" onclick="setPayout('sal')">
+        <div class="radio-dot"><div class="radio-inner"></div></div>
+        <div class="radio-text">
+          <strong>급여로 수취</strong>
+          <span>법인 비용 처리로 절세<br>근로소득세 + 4대보험</span>
+        </div>
+      </div>
+    </div>
+    <div id="sal-section" style="display:none; margin-top:12px">
+      <div class="pst">급여 설정</div>
+      <div class="igrid">
+        <div class="ig"><label>대표이사 연간 급여</label><div class="ir co"><input type="number" id="salary" value="48000000" step="1000000" oninput="calc()"><span class="iu">원/년</span></div></div>
+        <div class="ig"><label>기타 소득 (연간)</label><div class="ir co"><input type="number" id="other-inc" value="0" step="1000000" oninput="calc()"><span class="iu">원</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 결과 -->
+  <div id="result-section" style="display:none">
+    <div id="hero"></div>
+    <div class="panel" id="tax-panel"></div>
+    <div class="footnote">
+      ※ 통합 계산은 운영대행·호스텔이 <strong>하나의 법인</strong>으로 운영될 때의 세금입니다.<br>
+      ※ 개별 계산기의 결과와 다를 수 있습니다 (법인세 누진 구간 차이).<br>
+      ※ 법인세: 2억 이하 9%, 초과분 19% + 지방소득세 10%.<br>
+      ※ 배당소득세: 금융소득 2천만원 이하 15.4%, 초과분 종합과세.
+    </div>
+  </div>
+
+  <!-- 데이터 없을 때 안내 -->
+  <div id="no-data-guide" style="display:none">
+    <div class="no-data-box" style="margin-bottom:12px">
+      <div style="font-size:24px;margin-bottom:10px">⚠️</div>
+      <div style="font-weight:700;margin-bottom:6px">저장된 데이터가 없습니다</div>
+      <div style="color:var(--ts);line-height:1.7">
+        운영대행 또는 호스텔 계산기에서 수치를 입력하고<br>
+        <strong>💾 저장</strong> 버튼을 눌러주세요.
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <a href="agency.html" style="display:block;padding:14px;background:var(--ag-l);border:1.5px solid #FDE68A;border-radius:12px;text-align:center;color:var(--ag);font-weight:700;font-size:13px;text-decoration:none">
+        🏢 운영대행 계산기로
+      </a>
+      <a href="hostel.html" style="display:block;padding:14px;background:var(--hs-l);border:1.5px solid #DDD6FE;border-radius:12px;text-align:center;color:var(--hs);font-weight:700;font-size:13px;text-decoration:none">
+        🏨 호스텔 계산기로
+      </a>
+    </div>
+  </div>
+</div>
+
+<script src="js/tax.js"></script>
+<script src="js/store.js"></script>
+<script>
+let agData = null, hsData = null;
+let payout = 'div';
+
+function reload() {
+  agData = Store.load('agency');
+  hsData = Store.load('hostel');
+  renderStatus();
+  if (agData || hsData) calc();
+}
+
+function renderStatus() {
+  const el = document.getElementById('data-status');
+  const hasAny = agData || hsData;
+
+  if (!hasAny) {
+    el.innerHTML = '<div class="no-data-box">저장된 데이터가 없습니다. 각 계산기에서 저장 후 다시 확인하세요.</div>';
+    document.getElementById('profit-panel').style.display = 'none';
+    document.getElementById('payout-panel').style.display = 'none';
+    document.getElementById('result-section').style.display = 'none';
+    document.getElementById('no-data-guide').style.display = '';
+    return;
+  }
+
+  document.getElementById('no-data-guide').style.display = 'none';
+  document.getElementById('profit-panel').style.display = '';
+  document.getElementById('payout-panel').style.display = '';
+
+  let html = '';
+  if (agData) {
+    const unitNames = agData.units ? agData.units.map(u => u.name).join(', ') : '';
+    html += `<div class="profit-item ag-item">
+      <div class="pi-icon">🏢</div>
+      <div class="pi-body">
+        <div class="pi-title">법인 운영대행 — ${agData.units?.length||0}개 숙소</div>
+        <div class="pi-sub">${unitNames} · 대행 수수료 ${agData.agencyRate||0}%</div>
+      </div>
+      <div class="pi-amount ag">${won(agData.computed?.agencyIncome||0)} 수입</div>
+    </div>`;
+  } else {
+    html += `<div class="no-data-box" style="margin-bottom:8px;padding:12px">🏢 운영대행 데이터 없음 — <a href="agency.html" style="color:var(--ag)">계산기로 이동</a></div>`;
+  }
+  if (hsData) {
+    const r = hsData.rooms||{};
+    const rDesc = [r[4]&&`4인실 ${r[4]}개`, r[6]&&`6인실 ${r[6]}개`, r[8]&&`8인실 ${r[8]}개`].filter(Boolean).join(' + ');
+    html += `<div class="profit-item hs-item">
+      <div class="pi-icon">🏨</div>
+      <div class="pi-body">
+        <div class="pi-title">법인 호스텔 직접 운영</div>
+        <div class="pi-sub">${rDesc}</div>
+      </div>
+      <div class="pi-amount hs">${won(hsData.computed?.profAn||0)} 이익</div>
+    </div>`;
+  } else {
+    html += `<div class="no-data-box" style="padding:12px">🏨 호스텔 데이터 없음 — <a href="hostel.html" style="color:var(--hs)">계산기로 이동</a></div>`;
+  }
+  el.innerHTML = html;
+}
+
+function setPayout(m) {
+  payout = m;
+  document.getElementById('ri-div').className = 'radio-item' + (m==='div'?' sel':'');
+  document.getElementById('ri-sal').className = 'radio-item' + (m==='sal'?' sel':'');
+  // co 색으로 dot 변경
+  ['ri-div','ri-sal'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el.classList.contains('sel')) {
+      el.style.borderColor = 'var(--co)';
+      el.style.background  = 'var(--co-l)';
+      el.querySelector('.radio-dot').style.background = 'var(--co)';
+      el.querySelector('.radio-dot').style.borderColor = 'var(--co)';
+      el.querySelector('.radio-inner').style.display = 'block';
+    } else {
+      el.style.borderColor = '';
+      el.style.background  = '';
+      el.querySelector('.radio-dot').style.background = '#fff';
+      el.querySelector('.radio-dot').style.borderColor = 'var(--bd)';
+      el.querySelector('.radio-inner').style.display = 'none';
+    }
+  });
+  document.getElementById('sal-section').style.display = m==='sal' ? '' : 'none';
+  calc();
+}
+
+function calc() {
+  if (!agData && !hsData) return;
+
+  const agProfit = agData ? (agData.computed?.preTaxProfit || 0) : 0;
+  const hsProfit = hsData ? (hsData.computed?.profAn || 0)      : 0;
+  const totalPreTax = agProfit + hsProfit;
+
+  document.getElementById('profit-items').innerHTML = `
+    ${agData ? `<div class="li"><span class="ll">🏢 운영대행 법인 과세이익 (대행수입 − 유지비)</span><span class="lv ag">${won(agProfit)}</span></div>` : ''}
+    ${hsData ? `<div class="li"><span class="ll">🏨 호스텔 법인 영업이익 (순매출 − 운영비)</span><span class="lv hs">${won(hsProfit)}</span></div>` : ''}`;
+
+  document.getElementById('total-pretax').textContent = won(totalPreTax);
+  const parts = [agData && '운영대행', hsData && '호스텔'].filter(Boolean);
+  document.getElementById('total-pretax-sub').textContent = parts.join(' + ') + ' 합산';
+
+  const salary   = +document.getElementById('salary').value   || 0;
+  const otherInc = +document.getElementById('other-inc').value || 0;
+  const tx = calcTakeHome(totalPreTax, payout, salary, otherInc);
+
+  document.getElementById('result-section').style.display = '';
+
+  document.getElementById('hero').innerHTML = `
+    <div class="hero-card co">
+      <div class="hero-eyebrow">법인 통합 — 연간 최종 수취액</div>
+      <div class="hero-amount">${won(Math.max(0, tx.takeHome))}</div>
+      <div class="hero-sub">
+        ${parts.join(' + ')} 합산 &nbsp;|&nbsp; ${payout==='div'?'배당':'급여'} 방식
+      </div>
+      <div class="hero-grid">
+        <div class="hero-cell"><div class="hero-cell-label">합산 세전 이익</div><div class="hero-cell-val">${won(totalPreTax)}</div></div>
+        <div class="hero-cell"><div class="hero-cell-label">법인세 합계</div><div class="hero-cell-val">${won(tx.ct)}</div></div>
+        <div class="hero-cell"><div class="hero-cell-label">개인 세금+보험</div><div class="hero-cell-val">${won(tx.personalTax + tx.ins)}</div></div>
+      </div>
+    </div>`;
+
+  document.getElementById('tax-panel').innerHTML = `
+    <div class="pt">🏦 통합 세금 시뮬레이션</div>
+    ${agData?`<div class="li"><span class="ll">운영대행 과세이익</span><span class="lv ag">${won(agProfit)}</span></div>`:''}
+    ${hsData?`<div class="li"><span class="ll">호스텔 영업이익</span><span class="lv hs">${won(hsProfit)}</span></div>`:''}
+    <div class="li sub"><span class="ll">법인 합산 세전 이익</span><span class="lv">${won(totalPreTax)}</span></div>
+    ${payout==='sal'?`<div class="li"><span class="ll">대표이사 급여 (비용 처리)</span><span class="lv ng">−${won(salary)}</span></div>`:''}
+    <div class="li sub"><span class="ll">법인 과세표준</span><span class="lv">${won(tx.taxable)}</span></div>
+    <div class="li"><span class="ll">법인세 (2억 이하 9%, 초과 19%)</span><span class="lv ng">−${won(tx.ct/1.1)}</span></div>
+    <div class="li"><span class="ll">법인 지방소득세 (10%)</span><span class="lv ng">−${won(tx.ct/1.1*0.1)}</span></div>
+    <div class="li sub"><span class="ll">법인 세후 이익 (배당 가능액)</span><span class="lv">${won(tx.afterCorp)}</span></div>
+    ${payout==='div'?`
+    <div class="li"><span class="ll">배당소득세 (15.4% 또는 종합과세)</span><span class="lv ng">−${won(tx.personalTax)}</span></div>
+    <div class="li total co-bg"><span class="ll">연간 최종 수취액 (배당)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
+    <div class="li"><span class="ll">월 평균 수취액</span><span class="lv co">${won(Math.max(0,tx.takeHome)/12)}</span></div>
+    `:`
+    <div class="li"><span class="ll">대표이사 급여</span><span class="lv">${won(salary)}</span></div>
+    <div class="li"><span class="ll">근로소득세 (지방세 포함)</span><span class="lv ng">−${won(tx.personalTax)}</span></div>
+    <div class="li"><span class="ll">4대보험 개인분</span><span class="lv ng">−${won(tx.ins)}</span></div>
+    ${tx.afterCorp>0?`<div class="li"><span class="ll">법인 잔여이익 배당 실수령</span><span class="lv ps">+${won(tx.afterCorp - dividendTax(tx.afterCorp, salary))}</span></div>`:''}
+    <div class="li total co-bg"><span class="ll">연간 최종 수취액 (급여+배당)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
+    <div class="li"><span class="ll">월 평균 수취액</span><span class="lv co">${won(Math.max(0,tx.takeHome)/12)}</span></div>
+    `}
+    <div class="li" style="margin-top:4px"><span class="ll">총 세금 부담 (법인세+개인세)</span><span class="lv ng">${won(tx.ct + tx.personalTax + tx.ins)}</span></div>
+    <div class="li"><span class="ll">실효 수익률 (세전 이익 대비 수취)</span><span class="lv">${totalPreTax>0?(Math.max(0,tx.takeHome)/totalPreTax*100).toFixed(1):0}%</span></div>`;
+}
+
+// 초기화
+reload();
+setPayout('div');
+</script>
+</body>
+</html>

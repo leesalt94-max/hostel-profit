@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>법인 통합 수익 계산기</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F8FA;--sf:#fff;--bd:#E4E7EE;
+  --tp:#141820;--ts:#5C6370;--tm:#9BA3AE;--dv:#EAECF0;
+  --amb:#D97706;--amb-l:#FFFBEB;
+  --pur:#7C3AED;--pur-l:#F5F3FF;
+  --red:#EF4444;--grn:#10B981;--grn-l:#ECFDF5;
+  --tel:#0D9488;
+  --wd-c:#1D6FCC;--we-c:#C87E00;
+}
+body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);color:var(--tp);min-height:100vh;padding:24px 14px 80px}
+a{color:var(--amb);text-decoration:none}
+.wrap{max-width:880px;margin:0 auto}
+
+.back{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--ts);margin-bottom:16px}
+.back:hover{color:var(--amb)}
+.hdr{text-align:center;margin-bottom:24px}
+.eye{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--amb);background:var(--amb-l);padding:3px 11px;border-radius:100px;margin-bottom:10px}
+.hdr h1{font-size:21px;font-weight:800;line-height:1.35;margin-bottom:5px;letter-spacing:-.5px}
+.hdr p{font-size:12px;color:var(--ts);line-height:1.7}
+
+.panel{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:20px;margin-bottom:14px}
+.pt{font-size:11px;font-weight:700;color:var(--tm);letter-spacing:.07em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.tag{display:inline-block;font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:100px}
+.tag-a{background:var(--amb-l);color:var(--amb)}
+.tag-h{background:var(--pur-l);color:var(--pur)}
+
+/* inputs */
+.igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:10px}
+.ig label{display:block;font-size:10.5px;font-weight:500;color:var(--ts);margin-bottom:4px}
+.ir{display:flex;align-items:center;border:1.5px solid var(--bd);border-radius:9px;overflow:hidden;transition:border-color .15s}
+.ir:focus-within{border-color:var(--amb)}
+.ir input{flex:1;border:none;outline:none;padding:9px 9px;font-size:13px;font-weight:600;font-family:inherit;color:var(--tp);background:transparent;min-width:0}
+.iu{padding:0 10px 0 2px;font-size:10.5px;color:var(--tm);white-space:nowrap;flex-shrink:0}
+.psec{margin-top:14px;padding-top:14px;border-top:1px solid var(--dv)}
+.pst{font-size:10.5px;font-weight:700;color:var(--tm);letter-spacing:.07em;text-transform:uppercase;margin-bottom:9px}
+
+/* property count */
+.cnt-tabs{display:flex;gap:6px;margin-bottom:12px}
+.cnt-tab{width:42px;height:42px;border:1.5px solid var(--bd);border-radius:9px;background:#fff;font-size:15px;font-weight:700;font-family:inherit;color:var(--ts);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.cnt-tab.on{border-color:var(--amb);background:var(--amb);color:#fff}
+
+/* property rows */
+.prop-rows{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+.prop-row{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:center;background:var(--amb-l);border-radius:9px;padding:10px 12px;border:1px solid rgba(217,119,6,.2)}
+.prop-row .ir:focus-within{border-color:var(--amb)}
+.prop-lbl{font-size:12px;font-weight:700;color:var(--amb)}
+
+/* room cards */
+.room-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+@media(max-width:500px){.room-grid{grid-template-columns:1fr}}
+.room-card{border:2px solid var(--bd);border-radius:12px;padding:14px 12px;text-align:center;transition:all .15s;background:var(--sf)}
+.room-card.active{border-color:var(--pur);background:var(--pur-l)}
+.room-card.zero{opacity:.5}
+.rc-type{font-size:14px;font-weight:800;margin-bottom:2px}
+.rc-beds{font-size:10px;color:var(--ts);margin-bottom:10px}
+.room-counter{display:flex;align-items:center;justify-content:center;gap:8px}
+.rc-btn{width:30px;height:30px;border:1.5px solid var(--bd);border-radius:8px;background:#fff;font-size:18px;color:var(--tp);cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;transition:all .15s}
+.rc-btn:hover{border-color:var(--pur);color:var(--pur)}
+.rc-num{font-size:22px;font-weight:800;min-width:24px;text-align:center;color:var(--pur);letter-spacing:-1px}
+.rc-num.zero{color:var(--tm)}
+
+/* price table */
+.price-table{width:100%;border-collapse:collapse;margin-bottom:4px}
+.price-table th{font-size:10.5px;font-weight:600;color:var(--tm);padding:0 8px 8px;text-align:left;border-bottom:1px solid var(--dv)}
+.price-table th:not(:first-child){text-align:right}
+.price-table td{padding:7px 8px;border-bottom:1px solid var(--dv);font-size:12px}
+.price-table tr:last-child td{border-bottom:none}
+.price-table tr.dim td{opacity:.35}
+.ir-sm{display:inline-flex;align-items:center;border:1.5px solid var(--bd);border-radius:8px;overflow:hidden;float:right}
+.ir-sm:focus-within{border-color:var(--pur)}
+.ir-sm input{border:none;outline:none;padding:6px 8px;font-size:13px;font-weight:700;font-family:inherit;color:var(--wd-c);background:transparent;width:88px;text-align:right}
+.ir-sm .iu{padding:0 8px 0 2px;font-size:10.5px;color:var(--tm)}
+.we-td{text-align:right;color:var(--we-c);font-size:13px;font-weight:700}
+
+/* sliders */
+.occ-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:420px){.occ-grid{grid-template-columns:1fr}}
+.occ-item label{display:block;font-size:10.5px;font-weight:500;color:var(--ts);margin-bottom:6px}
+.occ-val-row{display:flex;align-items:baseline;gap:3px;margin-bottom:6px}
+.occ-big{font-size:26px;font-weight:800;letter-spacing:-1px}
+.occ-big.wd{color:var(--wd-c)}
+.occ-big.we{color:var(--we-c)}
+.occ-unit{font-size:12px;font-weight:500;color:var(--ts)}
+.mult-big{font-size:24px;font-weight:800;color:var(--we-c);letter-spacing:-1px;margin-bottom:4px}
+input[type=range]{width:100%;height:32px;-webkit-appearance:none;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:#E0DDD8;border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--tp);margin-top:-9px;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.slider-labels{display:flex;justify-content:space-between;font-size:10.5px;color:var(--tm);margin-top:-2px}
+
+/* radio */
+.rgrp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:440px){.rgrp{grid-template-columns:1fr}}
+.ri{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1.5px solid var(--bd);border-radius:9px;cursor:pointer;transition:all .15s;user-select:none}
+.ri:hover,.ri.sel{border-color:var(--amb);background:var(--amb-l)}
+.rd{width:14px;height:14px;border-radius:50%;border:2px solid var(--bd);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;background:#fff;transition:all .15s}
+.ri.sel .rd{border-color:var(--amb);background:var(--amb)}
+.rdi{width:5px;height:5px;border-radius:50%;background:#fff;display:none}
+.ri.sel .rdi{display:block}
+.rt strong{display:block;font-size:11.5px;font-weight:600;color:var(--tp);margin-bottom:2px}
+.rt span{font-size:10px;color:var(--ts);line-height:1.4}
+.sal-row{display:none}
+.sal-row.show{display:block;margin-top:12px}
+
+/* summary badges */
+.sum-bar{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.sum-box{border-radius:9px;padding:11px 14px;border:1px solid transparent}
+.sum-box.agency{background:var(--amb-l);border-color:rgba(217,119,6,.25)}
+.sum-box.hostel{background:var(--pur-l);border-color:#DDD6FE}
+.sum-box .sb-label{font-size:10.5px;font-weight:600;margin-bottom:3px}
+.sum-box.agency .sb-label{color:var(--amb)}
+.sum-box.hostel .sb-label{color:var(--pur)}
+.sum-box .sb-val{font-size:16px;font-weight:800;letter-spacing:-.5px}
+
+.cbtn{display:block;width:100%;margin-top:14px;padding:15px;background:linear-gradient(135deg,var(--amb),#B45309);color:#fff;border:none;border-radius:11px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:opacity .15s;letter-spacing:-.2px}
+.cbtn:hover{opacity:.87}
+
+/* results */
+.results{display:none}
+.results.show{display:block}
+.res-hero{background:linear-gradient(135deg,#D97706 0%,#7C3AED 100%);border-radius:14px;padding:24px 22px;margin-bottom:14px;color:#fff}
+.rh-eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin-bottom:8px}
+.rh-val{font-size:38px;font-weight:800;letter-spacing:-1.5px;margin-bottom:4px}
+.rh-sub{font-size:12px;opacity:.7;line-height:1.7}
+.rh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,.15);border-radius:10px;margin-top:16px;overflow:hidden}
+.rh-cell{background:rgba(255,255,255,.1);padding:12px;text-align:center}
+.rhc-label{font-size:10px;opacity:.65;margin-bottom:4px;font-weight:500}
+.rhc-val{font-size:15px;font-weight:700;letter-spacing:-.5px}
+
+.res-panel{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:20px;margin-bottom:12px}
+.rpt{font-size:13px;font-weight:700;margin-bottom:13px}
+
+.li{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--dv);font-size:11.5px;gap:6px}
+.li:last-of-type{border-bottom:none}
+.ll{color:var(--ts);flex:1}
+.lv{font-weight:600;white-space:nowrap}
+.lv.ng{color:var(--red)} .lv.ps{color:var(--grn)}
+.lv.ca{color:var(--amb)} .lv.cp{color:var(--pur)} .lv.ct{color:var(--tel)}
+.li.sub{background:var(--bg);margin:2px -6px;padding:5px 6px;border-radius:6px;border:none}
+.li.sub .ll{font-weight:700;color:var(--tp);font-size:11px}
+.li.tot{background:linear-gradient(135deg,var(--amb-l),var(--pur-l));margin:6px -6px;padding:9px 11px;border-radius:9px;border:none}
+.li.tot .ll{font-weight:700;color:var(--tp);font-size:12px}
+.li.tot .lv{font-size:14px;font-weight:800}
+
+.divider{display:flex;align-items:center;gap:8px;margin:10px 0 8px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--dv)}
+.divider span{font-size:10px;font-weight:700;color:var(--tm);white-space:nowrap}
+
+.fn{margin-top:14px;padding:12px 14px;background:var(--bg);border-radius:8px;font-size:10.5px;color:var(--tm);line-height:1.8}
+.load-notice{display:none;border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:12px;line-height:1.75;background:linear-gradient(135deg,#FFFBEB,#F5F3FF);border:1px solid rgba(217,119,6,.3)}
+.load-notice.show{display:block}
+.load-notice strong{font-weight:700;color:var(--tp)}
+.load-tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;margin-right:4px}
+.load-tag.a{background:var(--amb-l);color:var(--amb);border:1px solid rgba(217,119,6,.3)}
+.load-tag.h{background:var(--pur-l);color:var(--pur);border:1px solid #DDD6FE}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<a class="back" href="index.html">← 포털로 돌아가기</a>
+
+<div class="hdr">
+  <div class="eye">법인 통합 수익 분석</div>
+  <h1>법인 통합 수익 계산기</h1>
+  <p>
+    <span style="color:var(--amb);font-weight:700">법인 대행 수익</span> (다중 숙소 수수료)
+    &nbsp;+&nbsp;
+    <span style="color:var(--pur);font-weight:700">법인 호스텔 직접 운영 수익</span>
+    을 합산하여 총 법인 과세소득 및 최종 수취액을 계산합니다.
+  </p>
+</div>
+
+<div class="load-notice" id="load-notice"></div>
+
+<!-- ① 법인 대행 수익 -->
+<div class="panel">
+  <div class="pt"><span class="tag tag-a">대행 수익</span> 법인 대행 운영</div>
+
+  <div style="font-size:10.5px;color:var(--ts);margin-bottom:10px">
+    법인이 여러 숙소의 운영을 대행하고 수수료를 수취합니다. 각 숙소의 연간 총 매출을 입력하세요.
+  </div>
+
+  <div class="cnt-tabs">
+    <button class="cnt-tab on" onclick="setPropCount(1)">1</button>
+    <button class="cnt-tab" onclick="setPropCount(2)">2</button>
+    <button class="cnt-tab" onclick="setPropCount(3)">3</button>
+    <button class="cnt-tab" onclick="setPropCount(4)">4</button>
+    <button class="cnt-tab" onclick="setPropCount(5)">5</button>
+  </div>
+
+  <div class="prop-rows" id="prop-rows"></div>
+
+  <div class="igrid" style="grid-template-columns:1fr 1fr">
+    <div class="ig">
+      <label>법인 대행 수수료율</label>
+      <div class="ir"><input type="number" id="agency-rate" value="30" step="1" min="1" max="100" oninput="autoCalc()"><span class="iu">%</span></div>
+    </div>
+    <div class="ig">
+      <label>법인 연간 유지비</label>
+      <div class="ir"><input type="number" id="corp-cost" value="4000000" step="100000" oninput="autoCalc()"><span class="iu">원/년</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ② 법인 호스텔 직접 운영 수익 -->
+<div class="panel">
+  <div class="pt"><span class="tag tag-h">호스텔 수익</span> 법인 호스텔 직접 운영</div>
+
+  <div style="font-size:10.5px;color:var(--ts);margin-bottom:12px">
+    호스텔을 직접 운영하지 않는 경우 모든 객실 수를 0으로 유지하세요.
+  </div>
+
+  <div class="room-grid">
+    <div class="room-card active" id="hcard-4">
+      <div class="rc-type">4인실</div>
+      <div class="rc-beds">침대 4개 / 객실</div>
+      <div class="room-counter">
+        <button class="rc-btn" onclick="changeRoom(4,-1)">−</button>
+        <div class="rc-num" id="hnum-4">2</div>
+        <button class="rc-btn" onclick="changeRoom(4,1)">+</button>
+      </div>
+    </div>
+    <div class="room-card zero" id="hcard-6">
+      <div class="rc-type">6인실</div>
+      <div class="rc-beds">침대 6개 / 객실</div>
+      <div class="room-counter">
+        <button class="rc-btn" onclick="changeRoom(6,-1)">−</button>
+        <div class="rc-num zero" id="hnum-6">0</div>
+        <button class="rc-btn" onclick="changeRoom(6,1)">+</button>
+      </div>
+    </div>
+    <div class="room-card active" id="hcard-8">
+      <div class="rc-type">8인실</div>
+      <div class="rc-beds">침대 8개 / 객실</div>
+      <div class="room-counter">
+        <button class="rc-btn" onclick="changeRoom(8,-1)">−</button>
+        <div class="rc-num" id="hnum-8">4</div>
+        <button class="rc-btn" onclick="changeRoom(8,1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <table class="price-table">
+    <thead>
+      <tr>
+        <th>객실 유형</th>
+        <th>주중 단가 (1박)</th>
+        <th>주말 단가 (계산)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr id="hptr-4">
+        <td style="font-weight:700">4인실</td>
+        <td><div class="ir-sm"><input type="number" id="hwd4" value="80000" step="5000" oninput="updateWe();autoCalc()"><span class="iu">원</span></div></td>
+        <td class="we-td" id="hwe4-d">—</td>
+      </tr>
+      <tr id="hptr-6">
+        <td style="font-weight:700">6인실</td>
+        <td><div class="ir-sm"><input type="number" id="hwd6" value="110000" step="5000" oninput="updateWe();autoCalc()"><span class="iu">원</span></div></td>
+        <td class="we-td" id="hwe6-d">—</td>
+      </tr>
+      <tr id="hptr-8">
+        <td style="font-weight:700">8인실</td>
+        <td><div class="ir-sm"><input type="number" id="hwd8" value="140000" step="5000" oninput="updateWe();autoCalc()"><span class="iu">원</span></div></td>
+        <td class="we-td" id="hwe8-d">—</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="psec">
+    <div class="pst">주말 단가 배율 (금·토)</div>
+    <div class="mult-big" id="hmult-d">1.30×</div>
+    <input type="range" id="h-mult" min="1.0" max="3.0" step="0.05" value="1.30"
+      oninput="updateWe();autoCalc()">
+    <div class="slider-labels"><span>1.0×</span><span>1.5×</span><span>2.0×</span><span>2.5×</span><span>3.0×</span></div>
+  </div>
+
+  <div class="psec">
+    <div class="pst">객실 점유율</div>
+    <div class="occ-grid">
+      <div class="occ-item">
+        <label>주중 점유율 (월~목·일)</label>
+        <div class="occ-val-row">
+          <div class="occ-big wd" id="hocc-wd-d">60</div>
+          <div class="occ-unit">%</div>
+        </div>
+        <input type="range" id="hocc-wd" min="0" max="100" step="5" value="60"
+          oninput="document.getElementById('hocc-wd-d').textContent=this.value;autoCalc()">
+      </div>
+      <div class="occ-item">
+        <label>주말 점유율 (금·토)</label>
+        <div class="occ-val-row">
+          <div class="occ-big we" id="hocc-we-d">80</div>
+          <div class="occ-unit">%</div>
+        </div>
+        <input type="range" id="hocc-we" min="0" max="100" step="5" value="80"
+          oninput="document.getElementById('hocc-we-d').textContent=this.value;autoCalc()">
+      </div>
+    </div>
+  </div>
+
+  <div class="psec">
+    <div class="pst">월 고정비용 합계</div>
+    <div class="ig">
+      <label>임대료·인건비·공과금·청소비 등 합계</label>
+      <div class="ir"><input type="number" id="h-cost" value="6500000" step="100000" oninput="autoCalc()"><span class="iu">원/월</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ③ 합산 미리보기 -->
+<div class="panel" id="sum-panel">
+  <div class="pt">📊 수익 합산 미리보기</div>
+  <div class="sum-bar">
+    <div class="sum-box agency">
+      <div class="sb-label">🏠 법인 대행 연간 순수익</div>
+      <div class="sb-val" id="sum-agency">—</div>
+    </div>
+    <div class="sum-box hostel">
+      <div class="sb-label">🏨 호스텔 연간 운영 수익</div>
+      <div class="sb-val" id="sum-hostel">—</div>
+    </div>
+  </div>
+  <div style="margin-top:10px;padding:12px 14px;background:var(--bg);border-radius:9px;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:12px;font-weight:700;color:var(--tp)">합산 법인 연간 소득</span>
+    <span style="font-size:20px;font-weight:800;letter-spacing:-.5px" id="sum-total">—</span>
+  </div>
+</div>
+
+<!-- ④ 법인 이익 수취 방식 -->
+<div class="panel">
+  <div class="pt">⚖️ 법인 이익 수취 방식</div>
+  <div class="rgrp">
+    <div class="ri sel" id="ri-div" onclick="setPayout('div')">
+      <div class="rd"><div class="rdi"></div></div>
+      <div class="rt">
+        <strong>배당으로 수취</strong>
+        <span>법인세(9~19%) 후 배당소득세 15.4%. 4대보험 없음.</span>
+      </div>
+    </div>
+    <div class="ri" id="ri-sal" onclick="setPayout('sal')">
+      <div class="rd"><div class="rdi"></div></div>
+      <div class="rt">
+        <strong>급여로 수취 (대표이사)</strong>
+        <span>법인 비용처리 → 법인세 절감. 근로소득공제. 4대보험 발생.</span>
+      </div>
+    </div>
+  </div>
+  <div class="sal-row" id="sal-row">
+    <div class="pst" style="margin-top:2px">급여 설정</div>
+    <div class="igrid">
+      <div class="ig">
+        <label>대표이사 연간 급여</label>
+        <div class="ir"><input type="number" id="salary" value="36000000" step="1000000" oninput="autoCalc()"><span class="iu">원/년</span></div>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--tm);margin-top:6px">※ 급여는 법인 비용으로 처리되어 법인세 과세표준을 줄입니다.</div>
+  </div>
+  <button class="cbtn" onclick="calculate()">통합 수익 계산하기</button>
+</div>
+
+<!-- 결과 -->
+<div class="results" id="results"></div>
+
+</div>
+<script>
+// ── 상태 ──
+let propCount = 1;
+const rooms = {4:2, 6:0, 8:4};
+let payout = 'div';
+
+const WD_NIGHTS = 21.74;
+const WE_NIGHTS = 8.70;
+
+const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
+const fmtPct = n => n.toFixed(1) + '%';
+const g = id => document.getElementById(id);
+const v = id => g(id)?.value || '0';
+
+// ── 관리 숙소 수 ──
+function setPropCount(n) {
+  propCount = n;
+  document.querySelectorAll('.cnt-tab').forEach((b, i) => b.classList.toggle('on', i + 1 === n));
+  renderPropRows();
+}
+
+function renderPropRows() {
+  const el = g('prop-rows');
+  const prevVals = [];
+  for (let i = 1; i <= 5; i++) prevVals[i] = g(`prop-rev-${i}`)?.value || 50000000;
+  el.innerHTML = '';
+  for (let i = 1; i <= propCount; i++) {
+    el.innerHTML += `<div class="prop-row">
+      <span class="prop-lbl">숙소 ${i}</span>
+      <div class="ir" style="flex:1">
+        <input type="number" id="prop-rev-${i}" value="${prevVals[i]}" step="1000000" oninput="autoCalc()">
+        <span class="iu">원/년</span>
+      </div>
+    </div>`;
+  }
+  autoCalc();
+}
+
+// ── 대행 수익 계산 ──
+function calcAgency() {
+  const rate = (+v('agency-rate') || 0) / 100;
+  const corpCost = +v('corp-cost') || 0;
+  let totalRev = 0;
+  for (let i = 1; i <= propCount; i++) totalRev += +(g(`prop-rev-${i}`)?.value || 0);
+  const grossFee = totalRev * rate;
+  const netFee = Math.max(0, grossFee - corpCost);
+  return { totalRev, grossFee, netFee, corpCost };
+}
+
+// ── 호스텔 객실 UI ──
+function changeRoom(type, d) {
+  rooms[type] = Math.max(0, Math.min(10, rooms[type] + d));
+  updateRoomUI();
+  autoCalc();
+}
+
+function updateRoomUI() {
+  [4, 6, 8].forEach(t => {
+    const val = rooms[t];
+    const num = g('hnum-' + t);
+    const card = g('hcard-' + t);
+    num.textContent = val;
+    num.className = 'rc-num' + (val === 0 ? ' zero' : '');
+    card.className = 'room-card' + (val === 0 ? ' zero' : ' active');
+    const row = g('hptr-' + t);
+    if (row) row.className = val === 0 ? 'dim' : '';
+  });
+  updateWe();
+}
+
+function updateWe() {
+  const mult = +v('h-mult') || 1.3;
+  g('hmult-d').textContent = mult.toFixed(2) + '×';
+  [4, 6, 8].forEach(t => {
+    const wd = +(g('hwd' + t)?.value || 0);
+    g('hwe' + t + '-d').textContent = wd ? won(Math.round(wd * mult)) : '—';
+  });
+}
+
+// ── 호스텔 수익 계산 ──
+function calcHostel() {
+  const mult = +v('h-mult') || 1.3;
+  const wd4 = +v('hwd4'), wd6 = +v('hwd6'), wd8 = +v('hwd8');
+  const we4 = wd4 * mult, we6 = wd6 * mult, we8 = wd8 * mult;
+  const wdO = +v('hocc-wd') / 100;
+  const weO = +v('hocc-we') / 100;
+  const costMo = +v('h-cost') || 0;
+  const totalRooms = rooms[4] + rooms[6] + rooms[8];
+
+  const roomRev = (wdP, weP) => wdP * wdO * WD_NIGHTS + weP * weO * WE_NIGHTS;
+  const grossMo = roomRev(wd4, we4)*rooms[4] + roomRev(wd6, we6)*rooms[6] + roomRev(wd8, we8)*rooms[8];
+  const profitMo = grossMo - costMo;
+  const profitAn = profitMo * 12;
+
+  return { totalRooms, grossMo, costMo, profitMo, profitAn, wdO, weO, mult };
+}
+
+// ── 미리보기 업데이트 ──
+function updatePreview() {
+  const { netFee } = calcAgency();
+  const { profitAn, totalRooms } = calcHostel();
+  const hostelIncome = totalRooms > 0 ? profitAn : 0;
+  const total = netFee + hostelIncome;
+
+  g('sum-agency').textContent = won(netFee);
+  g('sum-hostel').textContent = totalRooms > 0 ? won(hostelIncome) : '운영 없음';
+  g('sum-total').textContent = won(total);
+  g('sum-total').style.color = total > 0 ? 'var(--amb)' : 'var(--red)';
+}
+
+// ── 급여/배당 ──
+function setPayout(m) {
+  payout = m;
+  g('ri-div').classList.toggle('sel', m === 'div');
+  g('ri-sal').classList.toggle('sel', m === 'sal');
+  g('sal-row').className = 'sal-row' + (m === 'sal' ? ' show' : '');
+  autoCalc();
+}
+
+// ── 세금 계산 ──
+function corpTax(profit) {
+  if (profit <= 0) return 0;
+  const base = profit <= 200000000 ? profit * 0.09
+    : 200000000 * 0.09 + (profit - 200000000) * 0.19;
+  return base * 1.1;
+}
+
+function incomeTax(income) {
+  if (income <= 0) return 0;
+  const B = [
+    [12000000,0.06,0],[46000000,0.15,1080000],[88000000,0.24,5220000],
+    [150000000,0.35,14900000],[300000000,0.38,19400000],[500000000,0.40,25400000],[Infinity,0.42,35400000],
+  ];
+  for (const [lim, r, d] of B) if (income <= lim) return Math.max(0, income * r - d) * 1.1;
+}
+
+function wageDeduction(w) {
+  if (w <= 5000000) return w * 0.70;
+  if (w <= 15000000) return 3500000 + (w - 5000000) * 0.40;
+  if (w <= 45000000) return 7500000 + (w - 15000000) * 0.15;
+  if (w <= 100000000) return 12000000 + (w - 45000000) * 0.05;
+  return 14750000 + (w - 100000000) * 0.02;
+}
+
+function dividendTax(div, other) {
+  if (div <= 20000000) return div * 0.154;
+  return 20000000 * 0.154 + Math.max(0, incomeTax(other + div - 20000000) - incomeTax(other));
+}
+
+let autoTimer;
+function autoCalc() {
+  updatePreview();
+  clearTimeout(autoTimer);
+  autoTimer = setTimeout(() => {
+    if (g('results').classList.contains('show')) calculate();
+  }, 350);
+}
+
+// ── 메인 계산 ──
+function calculate() {
+  const { totalRev, grossFee, netFee, corpCost } = calcAgency();
+  const agencyIncome = netFee;
+
+  const { totalRooms, grossMo, costMo, profitMo, profitAn, wdO, weO, mult } = calcHostel();
+  const hostelIncome = totalRooms > 0 ? Math.max(0, profitAn) : 0;
+
+  const totalCorpIncome = agencyIncome + hostelIncome;
+
+  let salary = 0, taxableProfit = totalCorpIncome;
+  if (payout === 'sal') {
+    salary = +v('salary') || 0;
+    taxableProfit = Math.max(0, totalCorpIncome - salary);
+  }
+
+  const ct = corpTax(taxableProfit);
+  const afterCorp = Math.max(0, taxableProfit - ct);
+
+  let personalTax = 0, insurance = 0, takeHome = 0;
+  if (payout === 'div') {
+    personalTax = dividendTax(afterCorp, 0);
+    takeHome = afterCorp - personalTax;
+  } else {
+    const taxableWage = Math.max(0, salary - wageDeduction(salary) - 1500000);
+    personalTax = incomeTax(taxableWage);
+    const hp = (salary / 12) * 0.03545 * 12;
+    insurance = hp + hp * 0.1295 + Math.min(salary, 66000000) * 0.045 + salary * 0.009;
+    takeHome = salary - personalTax - insurance;
+    if (afterCorp > 0) {
+      const xt = dividendTax(afterCorp, salary);
+      takeHome += afterCorp - xt;
+    }
+  }
+
+  const agencyPct = totalCorpIncome > 0 ? (agencyIncome / totalCorpIncome * 100).toFixed(1) : '0.0';
+  const hostelPct = totalCorpIncome > 0 ? (hostelIncome / totalCorpIncome * 100).toFixed(1) : '0.0';
+  const effRate = totalCorpIncome > 0 ? (takeHome / totalCorpIncome * 100).toFixed(1) : '0.0';
+
+  const roomDesc = [rooms[4]?`4인실 ${rooms[4]}개`:'', rooms[6]?`6인실 ${rooms[6]}개`:'', rooms[8]?`8인실 ${rooms[8]}개`:''].filter(Boolean).join(' · ');
+
+  const el = g('results');
+  el.className = 'results show';
+  el.innerHTML = `
+<div class="res-hero">
+  <div class="rh-eyebrow">법인 연간 합산 수익</div>
+  <div class="rh-val">${won(totalCorpIncome)}</div>
+  <div class="rh-sub">
+    <span style="opacity:.85">🏠 대행 ${won(agencyIncome)}</span>
+    &nbsp;+&nbsp;
+    <span style="opacity:.85">🏨 호스텔 ${won(hostelIncome)}</span>
+    &nbsp;|&nbsp; 최종 수취 ${won(takeHome)}
+  </div>
+  <div class="rh-grid">
+    <div class="rh-cell"><div class="rhc-label">대행 수익</div><div class="rhc-val">${won(agencyIncome)}</div></div>
+    <div class="rh-cell"><div class="rhc-label">호스텔 수익</div><div class="rhc-val">${won(hostelIncome)}</div></div>
+    <div class="rh-cell"><div class="rhc-label">연간 최종 수취</div><div class="rhc-val">${won(takeHome)}</div></div>
+  </div>
+</div>
+
+<div class="res-panel">
+  <div class="rpt">📋 법인 수익 구성 상세</div>
+
+  <div class="divider"><span>🏠 법인 대행 수익 (${agencyPct}%)</span></div>
+  <div class="li"><span class="ll">관리 숙소 수</span><span class="lv">${propCount}개</span></div>
+  <div class="li"><span class="ll">숙소 합산 연간 매출</span><span class="lv">${won(totalRev)}</span></div>
+  <div class="li"><span class="ll">법인 대행 수수료율</span><span class="lv">${v('agency-rate')}%</span></div>
+  <div class="li"><span class="ll">대행 수수료 수입</span><span class="lv ca">${won(grossFee)}</span></div>
+  <div class="li"><span class="ll">법인 유지비</span><span class="lv ng">−${won(corpCost)}</span></div>
+  <div class="li sub"><span class="ll">법인 대행 순수익</span><span class="lv">${won(agencyIncome)}</span></div>
+
+  <div class="divider"><span>🏨 법인 호스텔 운영 수익 (${hostelPct}%)</span></div>
+  ${totalRooms > 0 ? `
+  <div class="li"><span class="ll">객실 구성</span><span class="lv">${roomDesc}</span></div>
+  <div class="li"><span class="ll">주중·주말 점유율</span><span class="lv">${Math.round(wdO*100)}% · ${Math.round(weO*100)}%</span></div>
+  <div class="li"><span class="ll">주말 배율</span><span class="lv">${mult.toFixed(2)}×</span></div>
+  <div class="li"><span class="ll">월 총 매출</span><span class="lv">${won(grossMo)}</span></div>
+  <div class="li"><span class="ll">월 운영비</span><span class="lv ng">−${won(costMo)}</span></div>
+  <div class="li"><span class="ll">월 영업이익</span><span class="lv">${won(profitMo)}</span></div>
+  <div class="li sub"><span class="ll">호스텔 연간 운영 수익</span><span class="lv">${won(hostelIncome)}</span></div>
+  ` : '<div class="li"><span class="ll">호스텔 운영 없음</span><span class="lv">0원</span></div>'}
+
+  <div class="li tot"><span class="ll">법인 연간 합산 소득</span><span class="lv">${won(totalCorpIncome)}</span></div>
+</div>
+
+<div class="res-panel">
+  <div class="rpt">🏦 법인세 시뮬레이션</div>
+  <div class="li"><span class="ll">법인 연간 합산 소득</span><span class="lv">${won(totalCorpIncome)}</span></div>
+  ${payout === 'sal' ? `
+  <div class="li"><span class="ll">대표이사 급여 (비용 처리)</span><span class="lv ng">−${won(salary)}</span></div>
+  <div class="li sub"><span class="ll">법인 과세표준</span><span class="lv">${won(taxableProfit)}</span></div>` : ''}
+  <div class="li"><span class="ll">법인세 (2억 이하 9%, 초과 19%)</span><span class="lv ng">−${won(ct / 1.1)}</span></div>
+  <div class="li"><span class="ll">법인 지방소득세</span><span class="lv ng">−${won(ct / 1.1 * 0.1)}</span></div>
+  <div class="li sub"><span class="ll">법인 세후 이익 (배당 가능액)</span><span class="lv ca">${won(afterCorp)}</span></div>
+</div>
+
+<div class="res-panel">
+  <div class="rpt">💵 개인 최종 수취액</div>
+  ${payout === 'div' ? `
+  <div class="li"><span class="ll">배당금 (법인 세후 이익 전액)</span><span class="lv">${won(afterCorp)}</span></div>
+  <div class="li"><span class="ll">배당소득세 (15.4% 또는 종합과세)</span><span class="lv ng">−${won(personalTax)}</span></div>
+  <div class="li tot"><span class="ll">연간 최종 수취액</span><span class="lv">${won(takeHome)}</span></div>
+  <div class="li"><span class="ll">월 평균 수취액</span><span class="lv ct">${won(takeHome / 12)}</span></div>
+  ` : `
+  <div class="li"><span class="ll">대표이사 연간 급여</span><span class="lv">${won(salary)}</span></div>
+  <div class="li"><span class="ll">근로소득세 (지방세 포함)</span><span class="lv ng">−${won(personalTax)}</span></div>
+  <div class="li"><span class="ll">4대보험 본인 부담</span><span class="lv ng">−${won(insurance)}</span></div>
+  ${afterCorp > 0 ? `
+  <div class="li"><span class="ll">법인 잔여이익 배당</span><span class="lv ps">+${won(afterCorp)}</span></div>
+  <div class="li"><span class="ll">배당소득세</span><span class="lv ng">−${won(dividendTax(afterCorp, salary))}</span></div>` : ''}
+  <div class="li tot"><span class="ll">연간 최종 수취액</span><span class="lv">${won(takeHome)}</span></div>
+  <div class="li"><span class="ll">월 평균 수취액</span><span class="lv ct">${won(takeHome / 12)}</span></div>
+  `}
+</div>
+
+<div class="res-panel">
+  <div class="rpt">📅 연간 종합 요약</div>
+  <div class="li"><span class="ll">🏠 법인 대행 수익</span><span class="lv ca">${won(agencyIncome)} (${agencyPct}%)</span></div>
+  <div class="li"><span class="ll">🏨 호스텔 운영 수익</span><span class="lv cp">${won(hostelIncome)} (${hostelPct}%)</span></div>
+  <div class="li sub"><span class="ll">합산 법인 소득</span><span class="lv">${won(totalCorpIncome)}</span></div>
+  <div class="li"><span class="ll">법인세 + 지방소득세</span><span class="lv ng">−${won(ct)}</span></div>
+  <div class="li"><span class="ll">개인 세금${payout === 'sal' ? ' + 4대보험' : ''}</span><span class="lv ng">−${won(payout === 'sal' ? personalTax + insurance : personalTax)}</span></div>
+  <div class="li tot"><span class="ll">연간 최종 수취액</span><span class="lv">${won(takeHome)}</span></div>
+  <div class="li"><span class="ll">합산 소득 대비 실효수익률</span><span class="lv ct">${effRate}%</span></div>
+</div>
+
+<div class="fn">
+  ※ 본 계산기는 참고용이며 실제 세액과 다를 수 있습니다.<br>
+  ※ 법인 대행 수익은 각 숙소 운영자의 매출에 수수료율을 적용한 법인 수입입니다. 운영자 개인의 소득세는 별도 계산이 필요합니다.<br>
+  ※ 호스텔 운영 수익: 주중 월 약 21.7박(월~목·일), 주말 월 약 8.7박(금·토) 기준.<br>
+  ※ 법인세: 과세표준 2억 이하 9%, 초과분 19% + 지방소득세 10%.
+</div>
+`;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── localStorage 불러오기 ──
+function loadFromStorage() {
+  const agencyRaw = localStorage.getItem('hpa_agency');
+  const hostelRaw = localStorage.getItem('hpa_hostel');
+  const loaded = [];
+
+  if (agencyRaw) {
+    try {
+      const d = JSON.parse(agencyRaw);
+      propCount = Math.min(d.propCount || 1, 5);
+      document.querySelectorAll('.cnt-tab').forEach((b, i) => b.classList.toggle('on', i + 1 === propCount));
+      renderPropRows();
+      for (let i = 1; i <= propCount; i++) {
+        const el = g(`prop-rev-${i}`);
+        if (el && d.revenues?.[i - 1] !== undefined) el.value = d.revenues[i - 1];
+      }
+      if (d.agencyRate) g('agency-rate').value = d.agencyRate;
+      if (d.corpCost !== undefined) g('corp-cost').value = d.corpCost;
+      const savedTime = d.savedAt ? new Date(d.savedAt).toLocaleString('ko-KR') : '';
+      loaded.push(`<span class="load-tag a">대행 수익</span>운영자별 세금 시뮬레이터에서 불러왔습니다${savedTime ? ` (${savedTime})` : ''}`);
+    } catch(e) {}
+  }
+
+  if (hostelRaw) {
+    try {
+      const d = JSON.parse(hostelRaw);
+      if (d.rooms) { Object.assign(rooms, {4: +d.rooms[4]||0, 6: +d.rooms[6]||0, 8: +d.rooms[8]||0}); updateRoomUI(); }
+      if (d.wd4) g('hwd4').value = d.wd4;
+      if (d.wd6) g('hwd6').value = d.wd6;
+      if (d.wd8) g('hwd8').value = d.wd8;
+      if (d.weMult) { g('h-mult').value = d.weMult; g('hmult-d').textContent = (+d.weMult).toFixed(2) + '×'; }
+      if (d.occWd) { g('hocc-wd').value = d.occWd; g('hocc-wd-d').textContent = d.occWd; }
+      if (d.occWe) { g('hocc-we').value = d.occWe; g('hocc-we-d').textContent = d.occWe; }
+      if (d.monthlyCost) g('h-cost').value = d.monthlyCost;
+      updateWe();
+      const savedTime = d.savedAt ? new Date(d.savedAt).toLocaleString('ko-KR') : '';
+      loaded.push(`<span class="load-tag h">호스텔 수익</span>호스텔 수익 계산기에서 불러왔습니다${savedTime ? ` (${savedTime})` : ''}`);
+    } catch(e) {}
+  }
+
+  if (loaded.length > 0) {
+    const notice = g('load-notice');
+    notice.className = 'load-notice show';
+    notice.innerHTML = `<strong>🔗 연동 데이터 자동 입력됨</strong><br>${loaded.join('<br>')}`;
+  }
+}
+
+// ── 초기화 ──
+renderPropRows();
+updateRoomUI();
+loadFromStorage();
+autoCalc();
+</script>
+</body>
+</html>

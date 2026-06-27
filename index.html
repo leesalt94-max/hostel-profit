@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>숙박 운영 분석 솔루션 포털</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+
+    :root {
+      --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --secondary: #10b981;
+      --secondary-hover: #059669;
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+      --card-hover-shadow: 0 20px 40px -15px rgba(59, 130, 246, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      width: 100%;
+      text-align: center;
+    }
+
+    header {
+      margin-bottom: 50px;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.3;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-bottom: 50px;
+    }
+
+    @media (max-width: 520px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 24px;
+      padding: 40px 30px;
+      text-align: left;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: var(--card-shadow);
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      transition: background 0.3s ease;
+    }
+
+    .card-calc::before {
+      background: var(--primary);
+    }
+
+    .card-tax::before {
+      background: var(--secondary);
+    }
+
+    .card-hostel::before {
+      background: #7C3AED;
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--card-hover-shadow);
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .card-tax:hover {
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .icon-wrapper {
+      width: 60px;
+      height: 60px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin-bottom: 24px;
+      background: #f1f5f9;
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover .icon-wrapper {
+      transform: scale(1.1) rotate(3deg);
+    }
+
+    .card-calc .icon-wrapper {
+      color: var(--primary);
+      background: #eff6ff;
+    }
+
+    .card-tax .icon-wrapper {
+      color: var(--secondary);
+      background: #ecfdf5;
+    }
+
+    .card-hostel .icon-wrapper {
+      color: #7C3AED;
+      background: #F5F3FF;
+    }
+
+    .card h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      gap: 8px;
+    }
+
+    .card-calc .btn {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .card-calc .btn:hover {
+      background: var(--primary-hover);
+    }
+
+    .card-tax .btn {
+      background: var(--secondary);
+      color: #ffffff;
+    }
+
+    .card-tax .btn:hover {
+      background: var(--secondary-hover);
+    }
+
+    .card-hostel .btn {
+      background: #7C3AED;
+      color: #ffffff;
+    }
+
+    .card-hostel .btn:hover {
+      background: #6D28D9;
+    }
+
+    .card-hostel:hover {
+      border-color: rgba(124, 58, 237, 0.3);
+    }
+
+    .card-combined::before {
+      background: linear-gradient(90deg, #D97706, #7C3AED);
+    }
+
+    .card-combined .icon-wrapper {
+      color: #D97706;
+      background: #FFFBEB;
+    }
+
+    .card-combined .btn {
+      background: linear-gradient(135deg, #D97706, #B45309);
+      color: #ffffff;
+    }
+
+    .card-combined .btn:hover {
+      opacity: 0.87;
+    }
+
+    .card-combined:hover {
+      border-color: rgba(217, 119, 6, 0.3);
+    }
+
+    footer {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: auto;
+    }
+
+    .saved-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+      background: #D1FAE5;
+      color: #065F46;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .linked-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+      background: linear-gradient(135deg, #FEF3C7, #EDE9FE);
+      color: #92400E;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">Hostel Profit Analyzer</div>
+      <h1>숙박 운영 수익 분석 솔루션</h1>
+      <p>단가 설정부터 운영 구조별 세금 시뮬레이션까지 원스톱으로 관리하세요.</p>
+    </header>
+
+    <div class="grid">
+      <!-- 카드 1: 연간 매출 추정 프로그램 -->
+      <a href="revenue-calculator.html" class="card card-calc">
+        <div>
+          <div class="icon-wrapper">📊</div>
+          <h2>연간 매출 추정 프로그램</h2>
+          <p>주중/주말 단가, 할인율 및 플랫폼별 수수료(에어비앤비, 부킹닷컴)와 월 고정 비용을 반영하여 실시간으로 연간 세후 순수익을 시뮬레이션합니다.</p>
+        </div>
+        <span class="btn">실행하기 &rarr;</span>
+      </a>
+
+      <!-- 카드 2: 외국인도시민박업 운영자별 독립 계산 프로그램 -->
+      <a href="tax-simulator.html" class="card card-tax" id="card-tax">
+        <div>
+          <div class="icon-wrapper">🏦</div>
+          <h2>운영자별 독립 세금 시뮬레이터</h2>
+          <p>외국인도시민박업 운영자별로 독립적인 매출을 계산하고, 개인 직접 운영과 법인 배당 및 법인 급여 방식 중 어떤 방식이 가장 세금과 건보료 측면에서 유리한지 정밀 비교 분석합니다.</p>
+        </div>
+        <span class="btn">실행하기 &rarr;</span>
+      </a>
+
+      <!-- 카드 3: 법인 호스텔 수익 계산기 -->
+      <a href="hostel-calculator.html" class="card card-hostel" id="card-hostel">
+        <div>
+          <div class="icon-wrapper">🏨</div>
+          <h2>법인 호스텔 수익 계산기</h2>
+          <p>4인실·6인실·8인실 객실 구성을 선택하고, 침대별 단가와 점유율을 설정해 법인의 월·연간 매출부터 법인세·배당소득세·최종 수취액까지 한번에 시뮬레이션합니다.</p>
+        </div>
+        <span class="btn">실행하기 &rarr;</span>
+      </a>
+
+      <!-- 카드 4: 법인 통합 수익 계산기 -->
+      <a href="combined-calculator.html" class="card card-combined" id="card-combined">
+        <div>
+          <div class="icon-wrapper">🔗</div>
+          <h2>법인 통합 수익 계산기</h2>
+          <p>다중 숙소 법인 대행 수수료 수익과 법인 호스텔 직접 운영 수익을 합산하여 총 법인 과세소득 및 법인세·최종 수취액을 한 화면에서 계산합니다.</p>
+        </div>
+        <span class="btn">실행하기 &rarr;</span>
+      </a>
+    </div>
+
+    <footer>
+      &copy; 2026 Hostel Profit Analyzer. All rights reserved.
+    </footer>
+  </div>
+
+<script>
+(function() {
+  const agency = localStorage.getItem('hpa_agency');
+  const hostel = localStorage.getItem('hpa_hostel');
+
+  function addBadge(cardId, html) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    const h2 = card.querySelector('h2');
+    if (h2) h2.insertAdjacentHTML('beforeend', html);
+  }
+
+  if (agency) addBadge('card-tax', '<span class="saved-badge">✓ 저장됨</span>');
+  if (hostel) addBadge('card-hostel', '<span class="saved-badge">✓ 저장됨</span>');
+  if (agency || hostel) addBadge('card-combined', '<span class="linked-badge">🔗 연동 가능</span>');
+})();
+</script>
+</body>
+</html>

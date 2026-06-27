@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>법인 수익 시뮬레이터</title>
+<link rel="stylesheet" href="css/common.css">
+<style>
+body { display: flex; flex-direction: column; justify-content: center; min-height: 100vh; padding: 40px 14px; }
+.portal-header { text-align: center; margin-bottom: 36px; }
+.portal-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--co); margin-bottom: 10px; }
+.portal-header h1 { font-size: 24px; font-weight: 800; letter-spacing: -.5px; margin-bottom: 8px; }
+.portal-header p { font-size: 13px; color: var(--ts); line-height: 1.7; }
+.portal-footer { text-align: center; font-size: 11px; color: var(--tm); margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="portal-header">
+    <div class="portal-eyebrow">Hostel Profit Analyzer v2</div>
+    <h1>법인 수익 시뮬레이터</h1>
+    <p>운영 방식을 선택하면 객단가 → 매출 → 법인세 → 최종 수취액까지<br>자동으로 계산됩니다.</p>
+  </div>
+
+  <div class="scenario-grid">
+    <a href="agency.html" class="scenario-card ag-card">
+      <div class="sc-icon ag">🏢</div>
+      <div class="sc-body">
+        <div class="sc-title">법인 운영대행만</div>
+        <div class="sc-desc">N개 숙소를 법인이 대행 운영<br>대행 수수료 → 법인세 → 최종 수취</div>
+        <div id="ag-badge" style="display:none"><span class="sc-saved">✓ 저장됨</span></div>
+      </div>
+      <div class="sc-arrow">→</div>
+    </a>
+
+    <a href="hostel.html" class="scenario-card hs-card">
+      <div class="sc-icon hs">🏨</div>
+      <div class="sc-body">
+        <div class="sc-title">법인 호스텔만</div>
+        <div class="sc-desc">4·6·8인실 구성 → 침대 단가·점유율<br>운영비 차감 → 법인세 → 최종 수취</div>
+        <div id="hs-badge" style="display:none"><span class="sc-saved">✓ 저장됨</span></div>
+      </div>
+      <div class="sc-arrow">→</div>
+    </a>
+
+    <a href="combined.html" class="scenario-card co-card">
+      <div class="sc-icon co">🔗</div>
+      <div class="sc-body">
+        <div class="sc-title">운영대행 + 호스텔</div>
+        <div class="sc-desc">대행 수수료 수익 + 호스텔 운영 수익<br>법인 통합 과세소득 → 최종 수취</div>
+        <div id="co-badge" style="display:none"></div>
+      </div>
+      <div class="sc-arrow">→</div>
+    </a>
+  </div>
+
+  <div class="portal-footer">&copy; 2026 Hostel Profit Analyzer</div>
+</div>
+
+<script src="js/store.js"></script>
+<script>
+(function() {
+  const hasAg = Store.has('agency');
+  const hasHs = Store.has('hostel');
+  if (hasAg) document.getElementById('ag-badge').style.display = '';
+  if (hasHs) document.getElementById('hs-badge').style.display = '';
+  if (hasAg || hasHs) {
+    const co = document.getElementById('co-badge');
+    co.style.display = '';
+    co.innerHTML = (hasAg ? '<span class="sc-saved">✓ 대행 저장됨</span>' : '') +
+                   (hasHs ? '<span class="sc-saved" style="margin-left:4px">✓ 호스텔 저장됨</span>' : '');
+  }
+})();
+</script>
+</body>
+</html>
