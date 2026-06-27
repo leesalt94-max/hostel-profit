@@ -67,18 +67,12 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 24px;
       margin-bottom: 50px;
     }
 
-    @media (max-width: 720px) {
-      .grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media (max-width: 480px) {
+    @media (max-width: 520px) {
       .grid {
         grid-template-columns: 1fr;
       }
@@ -224,6 +218,28 @@
       border-color: rgba(124, 58, 237, 0.3);
     }
 
+    .card-combined::before {
+      background: linear-gradient(90deg, #D97706, #7C3AED);
+    }
+
+    .card-combined .icon-wrapper {
+      color: #D97706;
+      background: #FFFBEB;
+    }
+
+    .card-combined .btn {
+      background: linear-gradient(135deg, #D97706, #B45309);
+      color: #ffffff;
+    }
+
+    .card-combined .btn:hover {
+      opacity: 0.87;
+    }
+
+    .card-combined:hover {
+      border-color: rgba(217, 119, 6, 0.3);
+    }
+
     footer {
       font-size: 0.85rem;
       color: var(--text-muted);
@@ -266,6 +282,16 @@
           <div class="icon-wrapper">🏨</div>
           <h2>법인 호스텔 수익 계산기</h2>
           <p>4인실·6인실·8인실 객실 구성을 선택하고, 침대별 단가와 점유율을 설정해 법인의 월·연간 매출부터 법인세·배당소득세·최종 수취액까지 한번에 시뮬레이션합니다.</p>
+        </div>
+        <span class="btn">실행하기 &rarr;</span>
+      </a>
+
+      <!-- 카드 4: 법인 통합 수익 계산기 -->
+      <a href="combined-calculator.html" class="card card-combined">
+        <div>
+          <div class="icon-wrapper">🔗</div>
+          <h2>법인 통합 수익 계산기</h2>
+          <p>다중 숙소 법인 대행 수수료 수익과 법인 호스텔 직접 운영 수익을 합산하여 총 법인 과세소득 및 법인세·최종 수취액을 한 화면에서 계산합니다.</p>
         </div>
         <span class="btn">실행하기 &rarr;</span>
       </a>
