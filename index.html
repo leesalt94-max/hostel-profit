@@ -67,12 +67,18 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 30px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
       margin-bottom: 50px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 720px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
       .grid {
         grid-template-columns: 1fr;
       }
@@ -114,6 +120,10 @@
       background: var(--secondary);
     }
 
+    .card-hostel::before {
+      background: #7C3AED;
+    }
+
     .card:hover {
       transform: translateY(-8px);
       box-shadow: var(--card-hover-shadow);
@@ -149,6 +159,11 @@
     .card-tax .icon-wrapper {
       color: var(--secondary);
       background: #ecfdf5;
+    }
+
+    .card-hostel .icon-wrapper {
+      color: #7C3AED;
+      background: #F5F3FF;
     }
 
     .card h2 {
@@ -196,6 +211,19 @@
       background: var(--secondary-hover);
     }
 
+    .card-hostel .btn {
+      background: #7C3AED;
+      color: #ffffff;
+    }
+
+    .card-hostel .btn:hover {
+      background: #6D28D9;
+    }
+
+    .card-hostel:hover {
+      border-color: rgba(124, 58, 237, 0.3);
+    }
+
     footer {
       font-size: 0.85rem;
       color: var(--text-muted);
@@ -228,6 +256,16 @@
           <div class="icon-wrapper">🏦</div>
           <h2>운영자별 독립 세금 시뮬레이터</h2>
           <p>외국인도시민박업 운영자별로 독립적인 매출을 계산하고, 개인 직접 운영과 법인 배당 및 법인 급여 방식 중 어떤 방식이 가장 세금과 건보료 측면에서 유리한지 정밀 비교 분석합니다.</p>
+        </div>
+        <span class="btn">실행하기 &rarr;</span>
+      </a>
+
+      <!-- 카드 3: 법인 호스텔 수익 계산기 -->
+      <a href="hostel-calculator.html" class="card card-hostel">
+        <div>
+          <div class="icon-wrapper">🏨</div>
+          <h2>법인 호스텔 수익 계산기</h2>
+          <p>4인실·6인실·8인실 객실 구성을 선택하고, 침대별 단가와 점유율을 설정해 법인의 월·연간 매출부터 법인세·배당소득세·최종 수취액까지 한번에 시뮬레이션합니다.</p>
         </div>
         <span class="btn">실행하기 &rarr;</span>
       </a>
