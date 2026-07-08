@@ -96,12 +96,12 @@ function socialInsurance(salary) {
 }
 
 // ── 법인 최종 수취액 계산 ──
-function calcTakeHome(preTaxProfit, payout, salary = 0, otherInc = 0) {
+function calcTakeHome(preTaxProfit, payout, salary = 0, otherInc = 0, skipCorpTax = false) {
   const taxable = payout === 'sal'
     ? Math.max(0, preTaxProfit - salary)
     : preTaxProfit;
 
-  const ct = corpTax(taxable);
+  const ct = skipCorpTax ? 0 : corpTax(taxable);
   const afterCorp = Math.max(0, taxable - ct);
 
   let personalTax = 0, ins = 0, takeHome = 0;
