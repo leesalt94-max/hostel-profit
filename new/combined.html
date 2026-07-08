@@ -118,19 +118,21 @@
     <!-- 법인 부가가치세 -->
     <div class="psec">
       <div class="pst">법인 부가가치세 <span style="font-weight:400;color:var(--tm);font-size:10.5px">(일반과세자 기준 10%)</span></div>
-      <div id="corp-vat-preview" style="font-size:11px;color:var(--ts);margin-bottom:8px;line-height:1.6"></div>
+      <div id="corp-vat-preview" style="font-size:11px;color:var(--ts);margin-bottom:10px;line-height:1.7"></div>
+      <div class="pst" style="margin-bottom:6px">자동 매입세액공제 내역 <span style="font-weight:400;color:var(--tm);font-size:10.5px">(1·2단계 입력 기반 · 인건비·이자 제외)</span></div>
+      <div id="corp-auto-vat-rows" style="margin-bottom:8px"></div>
       <div class="igrid">
         <div class="ig">
-          <label>매입세액공제 (연간)</label>
+          <label>추가 매입세액공제 <span style="font-weight:400;color:var(--tm)">(세금계산서 추가 수취분)</span></label>
           <div class="ir co">
             <input type="number" id="corp-input-vat" value="0" step="100000" oninput="calc()">
-            <span class="iu">원</span>
+            <span class="iu">원/년</span>
           </div>
         </div>
       </div>
       <div class="info-box we-bg" style="margin-top:8px">
-        법인 매출(대행수수료 + 호스텔 매출)의 10%를 부가세로 납부합니다.<br>
-        운영비 등 세금계산서 수취분을 매입세액공제로 입력하면 차감됩니다.
+        인건비·대출이자는 VAT 공제 불가 — 제외됩니다.<br>
+        그 외 경비(임차료·공과금·비품 등)는 1·2단계에서 자동 불러옵니다.
       </div>
     </div>
   </div>
@@ -394,23 +396,68 @@ function calc() {
   const otherInc = +document.getElementById('other-inc').value || 0;
   const tx = calcTakeHome(totalPreTax, payout, salary, otherInc, noCorpTax);
 
-  // 법인 부가가치세
+  // 법인 부가가치세 — 매출세액
   const agVatBase       = agData ? (agData.computed?.agencyIncome || 0) : 0;
   const hsGrossAnnual   = hsData ? ((hsData.computed?.grossMo || 0) * 12) : 0;
   const corpOutputVat   = (agVatBase + hsGrossAnnual) * 0.1;
-  const corpInputVatDeduct = +document.getElementById('corp-input-vat').value || 0;
-  const corpNetVat      = Math.max(0, corpOutputVat - corpInputVatDeduct);
+
+  // 자동 매입세액 — 1·2단계 VAT-able 경비 (인건비·대출이자 제외)
+  const agCorpCostAnn    = agData ? (agData.computed?.corpCostAnnual    || 0) : 0;
+  const agBilledEquipAnn = agData ? (agData.computed?.billedEquipAnnual || 0) : 0;
+  const hsC              = hsData?.costs || {};
+  const hsRentAnn        = (hsC.rent  || 0) * 12;
+  const hsUtilAnn        = (hsC.util  || 0) * 12;
+  const hsCleanAnn       = (hsC.clean || 0) * 12;
+  const hsGoodsAnn       = (hsC.goods || 0) * 12;
+  const hsCorpAnn        = (hsC.corp  || 0) * 12;
+  const hsEtcAnn         = (hsC.etc   || 0) * 12;
+  const autoVatBase      = agCorpCostAnn + agBilledEquipAnn + hsRentAnn + hsUtilAnn + hsCleanAnn + hsGoodsAnn + hsCorpAnn + hsEtcAnn;
+  const autoInputVat     = autoVatBase * 0.1;
+  const extraInputVat    = +document.getElementById('corp-input-vat').value || 0;
+  const corpInputVatDeduct = autoInputVat + extraInputVat;
+  const corpNetVat       = Math.max(0, corpOutputVat - corpInputVatDeduct);
+
   // 유보 모드는 법인세/VAT가 법인 내부에서 처리 → 개인 수취(급여)는 영향 없음
   const finalTakeHome   = payout === 'ret'
     ? Math.max(0, tx.takeHome)
     : Math.max(0, tx.takeHome - corpNetVat);
 
-  // 매출세액 미리보기 업데이트
+  // 매출세액·납부세액 미리보기
   document.getElementById('corp-vat-preview').innerHTML =
-    `예상 매출세액: <strong>${won(corpOutputVat)}</strong>` +
-    (agVatBase > 0 ? ` (대행수수료 ${won(agVatBase)}×10%)` : '') +
-    (hsGrossAnnual > 0 ? ` + (호스텔매출 ${won(hsGrossAnnual)}×10%)` : '') +
-    ` &nbsp;→ 납부세액: <strong style="color:var(--red)">${won(corpNetVat)}</strong>`;
+    `매출세액 <strong>${won(corpOutputVat)}</strong>` +
+    (agVatBase > 0 ? ` (대행 ${won(agVatBase)}×10%)` : '') +
+    (hsGrossAnnual > 0 ? (agVatBase > 0 ? ` + ` : ' ') + `(호스텔 ${won(hsGrossAnnual)}×10%)` : '') +
+    ` &nbsp;−&nbsp; 매입세액 <strong>${won(corpInputVatDeduct)}</strong>` +
+    ` &nbsp;→&nbsp; 납부세액 <strong style="color:var(--red)">${won(corpNetVat)}</strong>`;
+
+  // 자동 매입세액 내역 행
+  const autoVatItems = [
+    agCorpCostAnn    > 0 ? ['🏢 운영대행 법인유지비',      agCorpCostAnn]    : null,
+    agBilledEquipAnn > 0 ? ['🏢 운영대행 청구 비품·소모품', agBilledEquipAnn] : null,
+    hsRentAnn  > 0 ? ['🏨 호스텔 임차료',     hsRentAnn]  : null,
+    hsUtilAnn  > 0 ? ['🏨 호스텔 공과금',     hsUtilAnn]  : null,
+    hsCleanAnn > 0 ? ['🏨 호스텔 청소·세탁비', hsCleanAnn] : null,
+    hsGoodsAnn > 0 ? ['🏨 호스텔 소모품·비품', hsGoodsAnn] : null,
+    hsCorpAnn  > 0 ? ['🏨 호스텔 법인유지비',  hsCorpAnn]  : null,
+    hsEtcAnn   > 0 ? ['🏨 호스텔 기타',       hsEtcAnn]   : null,
+  ].filter(Boolean);
+
+  const excludedNote = (() => {
+    const laborAnn = (agData?.computed?.billedLaborAnnual || 0) + (hsC.labor || 0) * 12;
+    const loanAnn  = (hsC.loan || 0) * 12;
+    const parts = [];
+    if (laborAnn > 0) parts.push(`인건비 ${won(laborAnn)}`);
+    if (loanAnn  > 0) parts.push(`대출이자 ${won(loanAnn)}`);
+    return parts.length ? `<div class="li" style="font-size:10.5px;color:var(--ts);padding:3px 0">※ VAT 공제 불가 항목 제외: ${parts.join(', ')}</div>` : '';
+  })();
+
+  document.getElementById('corp-auto-vat-rows').innerHTML = autoVatItems.length > 0
+    ? autoVatItems.map(([label, amount]) =>
+        `<div class="li" style="font-size:11px"><span class="ll">${label} × 10%</span><span class="lv ps">−${won(amount * 0.1)}</span></div>`
+      ).join('') +
+      `<div class="li sub" style="font-size:11px"><span class="ll">자동 매입세액 소계</span><span class="lv ps">−${won(autoInputVat)}</span></div>` +
+      excludedNote
+    : '<div style="font-size:11px;color:var(--ts);padding:4px 0">자동 계산 항목 없음 — 1·2단계에서 데이터를 저장하세요.</div>';
 
   document.getElementById('result-section').style.display = '';
 
@@ -464,7 +511,8 @@ function calc() {
       ${agVatBase > 0 ? `<div class="li"><span class="ll">대행수수료 매출세액 (${won(agVatBase)}×10%)</span><span class="lv">${won(agVatBase * 0.1)}</span></div>` : ''}
       ${hsGrossAnnual > 0 ? `<div class="li"><span class="ll">호스텔 매출세액 (${won(hsGrossAnnual)}×10%)</span><span class="lv">${won(hsGrossAnnual * 0.1)}</span></div>` : ''}
       <div class="li sub"><span class="ll">매출세액 합계</span><span class="lv">${won(corpOutputVat)}</span></div>
-      ${corpInputVatDeduct > 0 ? `<div class="li"><span class="ll">매입세액공제</span><span class="lv ps">−${won(corpInputVatDeduct)}</span></div>` : ''}
+      ${autoInputVat  > 0 ? `<div class="li"><span class="ll">매입세액공제 — 자동 (경비 × 10%)</span><span class="lv ps">−${won(autoInputVat)}</span></div>`  : ''}
+      ${extraInputVat > 0 ? `<div class="li"><span class="ll">매입세액공제 — 추가 직접 입력</span><span class="lv ps">−${won(extraInputVat)}</span></div>` : ''}
       <div class="li sub"><span class="ll">법인 부가세 납부액</span><span class="lv ng">−${won(corpNetVat)}</span></div>
     </div>
     ${payout==='ret'?`
