@@ -1,4 +1,13 @@
 {
   "version": 2,
-  "buildCommand": ""
+  "framework": null,
+  "buildCommand": "",
+  "installCommand": "",
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/new/index.html",
+      "permanent": false
+    }
+  ]
 }
