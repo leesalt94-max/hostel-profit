@@ -108,7 +108,7 @@
 
   <!-- ② 단가 설정 -->
   <div class="panel hs-border">
-    <div class="pt">💰 객실별 주중 단가 (1박·침대 1개 기준)</div>
+    <div class="pt">💰 객실별 1박 단가 (캡슐은 1개당 · 4·8인실은 객실 1개당)</div>
     <table class="price-table">
       <thead>
         <tr>
@@ -119,18 +119,18 @@
       </thead>
       <tbody>
         <tr class="ptr" id="ptr-1">
-          <td class="pt-label">🛌 1인실 (캡슐)</td>
+          <td class="pt-label">🛌 1인실 (캡슐) <span style="font-size:10px;color:var(--tm);font-weight:400">· 캡슐 1개당</span></td>
           <td><div class="ir-sm"><input type="number" id="wd1" value="25000" step="1000" oninput="updateWePrices();autoCalc()"><span class="iu">원</span></div></td>
           <td class="we-td" id="we1-disp">—</td>
         </tr>
         <tr class="ptr" id="ptr-4">
-          <td class="pt-label">🛏 4인실</td>
-          <td><div class="ir-sm"><input type="number" id="wd4" value="30000" step="1000" oninput="updateWePrices();autoCalc()"><span class="iu">원</span></div></td>
+          <td class="pt-label">🛏 4인실 <span style="font-size:10px;color:var(--tm);font-weight:400">· 객실 1개당</span></td>
+          <td><div class="ir-sm"><input type="number" id="wd4" value="120000" step="5000" oninput="updateWePrices();autoCalc()"><span class="iu">원</span></div></td>
           <td class="we-td" id="we4-disp">—</td>
         </tr>
         <tr class="ptr" id="ptr-8">
-          <td class="pt-label">🛏 8인실</td>
-          <td><div class="ir-sm"><input type="number" id="wd8" value="20000" step="1000" oninput="updateWePrices();autoCalc()"><span class="iu">원</span></div></td>
+          <td class="pt-label">🛏 8인실 <span style="font-size:10px;color:var(--tm);font-weight:400">· 객실 1개당</span></td>
+          <td><div class="ir-sm"><input type="number" id="wd8" value="200000" step="5000" oninput="updateWePrices();autoCalc()"><span class="iu">원</span></div></td>
           <td class="we-td" id="we8-disp">—</td>
         </tr>
       </tbody>
@@ -392,14 +392,16 @@ function calc() {
   const wdO = +v('occ-wd')/100, weO = +v('occ-we')/100;
   const fee = getEffFee();
 
-  // 타입별 월 매출 (단가 × 점유율 × 박수 × 침대수)
-  const revRoom = (wdP, weP, beds) => {
-    const gross = (wdP*wdO*WD_NIGHTS + weP*weO*WE_NIGHTS) * beds;
+  // 타입별 월 매출 (단가 × 점유율 × 박수 × 객실수)
+  // 1인실(캡슐): 캡슐 1개당 단가 × 캡슐 수
+  // 4·8인실: 객실 1개당 단가 × 객실 수 (침대수 곱하지 않음)
+  const revRoom = (wdP, weP, cnt) => {
+    const gross = (wdP*wdO*WD_NIGHTS + weP*weO*WE_NIGHTS) * cnt;
     return { gross, net: gross*(1-fee) };
   };
-  const r1 = revRoom(wd1, we1, n1);       // 캡슐: 1개 = 1침대
-  const r4 = revRoom(wd4, we4, n4 * 4);   // 4인실: 1개 = 4침대
-  const r8 = revRoom(wd8, we8, n8 * 8);   // 8인실: 1개 = 8침대
+  const r1 = revRoom(wd1, we1, n1);   // 캡슐 1인실: 14개
+  const r4 = revRoom(wd4, we4, n4);   // 4인실: 2개 (객실당 단가)
+  const r8 = revRoom(wd8, we8, n8);   // 8인실: 2개 (객실당 단가)
 
   const grossMo = r1.gross + r4.gross + r8.gross;
   const netMo   = r1.net   + r4.net   + r8.net;
@@ -446,13 +448,16 @@ function calc() {
 
   // 객실별 매출 상세
   const roomRows = [
-    n1>0 ? `<div class="li"><span class="ll">🛌 캡슐 1인실 ${n1}개 (침대 ${n1}개 · 3층) — 주중 ${won(wd1)}/주말 ${won(we1)}</span><span class="lv hs">${won(r1.net)}</span></div>` : '',
-    n4>0 ? `<div class="li"><span class="ll">🛏 4인실 ${n4}개 (침대 ${n4*4}개 · 1·2층) — 주중 ${won(wd4)}/주말 ${won(we4)}</span><span class="lv hs">${won(r4.net)}</span></div>` : '',
-    n8>0 ? `<div class="li"><span class="ll">🛏 8인실 ${n8}개 (침대 ${n8*8}개 · 2층) — 주중 ${won(wd8)}/주말 ${won(we8)}</span><span class="lv hs">${won(r8.net)}</span></div>` : '',
+    n1>0 ? `<div class="li"><span class="ll">🛌 캡슐 1인실 ${n1}개 (3층) — 캡슐당 주중 ${won(wd1)}/주말 ${won(we1)}</span><span class="lv hs">${won(r1.net)}</span></div>` : '',
+    n4>0 ? `<div class="li"><span class="ll">🛏 4인실 ${n4}개 (1·2층) — 객실당 주중 ${won(wd4)}/주말 ${won(we4)}</span><span class="lv hs">${won(r4.net)}</span></div>` : '',
+    n8>0 ? `<div class="li"><span class="ll">🛏 8인실 ${n8}개 (2층) — 객실당 주중 ${won(wd8)}/주말 ${won(we8)}</span><span class="lv hs">${won(r8.net)}</span></div>` : '',
   ].join('');
 
   document.getElementById('room-rev-panel').innerHTML = `
     <div class="pt">🏨 객실별 월 순매출 (수수료 ${(fee*100).toFixed(1)}% 차감 후)</div>
+    <div class="li" style="font-size:10.5px;color:var(--tm);padding-bottom:0;border-bottom:none">
+      ※ 캡슐 1인실: 캡슐 1개당 단가 × 14개 &nbsp;|&nbsp; 4·8인실: 객실 1개당 단가 × 객실수
+    </div>
     ${roomRows}
     <div class="li sub"><span class="ll">합계 월 순매출</span><span class="lv">${won(netMo)}</span></div>
     <div class="li" style="margin-top:4px"><span class="ll">연간 순매출</span><span class="lv hs">${won(netAn)}</span></div>`;
