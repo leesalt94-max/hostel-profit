@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="css/common.css">
 <style>
 .floor-box {
-  background: var(--s2);
+  background: var(--bg);
   border: 1px solid var(--dv);
   border-radius: 10px;
   padding: 12px 14px;
@@ -48,6 +48,13 @@
   font-weight: 700;
   margin-left: 4px;
 }
+.go-combined {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--co-l); border: 1px solid #99f6e4;
+  border-radius: 10px; margin-top: 10px; text-decoration: none;
+}
+.go-combined span { font-size: 12px; font-weight: 700; color: var(--co-d); }
+.go-combined .arr { font-size: 16px; color: var(--co); }
 </style>
 </head>
 <body>
@@ -59,7 +66,8 @@
 <div class="wrap">
   <div class="page-hdr">
     <h1>법인 호스텔 계산기</h1>
-    <p>층별 객실 구성 → 침대 단가·점유율 → 운영비 → 법인세 → 최종 수취액</p>
+    <p>층별 객실 구성 → 침대 단가·점유율 → 운영비 → 법인 세전 이익<br>
+    <span style="font-size:11px;color:var(--co);font-weight:600">💡 배당·급여 세금 계산은 '통합 계산기'에서 진행합니다</span></p>
   </div>
 
   <!-- ① 객실 구성 -->
@@ -69,7 +77,7 @@
       <div class="room-card active" id="card-1">
         <div class="rc-emoji">🛌</div>
         <div class="rc-type">1인실<span class="capsule-badge">캡슐</span></div>
-        <div class="rc-beds">침대 1개 / 캡슐</div>
+        <div class="rc-beds">1개 / 캡슐</div>
         <div class="counter-row" style="justify-content:center">
           <button class="cnt-btn" onclick="changeRoom(1,-1)">−</button>
           <div class="rc-num" id="num-1">14</div>
@@ -150,7 +158,7 @@
 
   <!-- ③ 점유율 -->
   <div class="panel hs-border">
-    <div class="pt">📊 침대 점유율</div>
+    <div class="pt">📊 점유율</div>
     <div class="two-col">
       <div class="slider-field">
         <label>주중 점유율 (월~목+일)</label>
@@ -213,45 +221,15 @@
     </div>
   </div>
 
-  <!-- ⑥ 이익 수취 방식 -->
-  <div class="panel hs-border">
-    <div class="pt">⚖️ 이익 수취 방식</div>
-    <div class="radio-grid">
-      <div class="radio-item sel-hs" id="ri-div" onclick="setPayout('div')">
-        <div class="radio-dot"><div class="radio-inner"></div></div>
-        <div class="radio-text">
-          <strong>배당으로 수취</strong>
-          <span>법인세 후 배당소득세 15.4%<br>4대보험 없음</span>
-        </div>
-      </div>
-      <div class="radio-item" id="ri-sal" onclick="setPayout('sal')">
-        <div class="radio-dot"><div class="radio-inner"></div></div>
-        <div class="radio-text">
-          <strong>급여로 수취</strong>
-          <span>법인 비용 처리로 절세<br>근로소득세 + 4대보험</span>
-        </div>
-      </div>
-    </div>
-    <div id="sal-section" style="display:none; margin-top:12px">
-      <div class="pst">급여 설정</div>
-      <div class="igrid">
-        <div class="ig"><label>대표이사 연간 급여</label><div class="ir hs"><input type="number" id="salary" value="36000000" step="1000000" oninput="autoCalc()"><span class="iu">원/년</span></div></div>
-        <div class="ig"><label>기타 소득 (연간)</label><div class="ir hs"><input type="number" id="other-inc" value="0" step="1000000" oninput="autoCalc()"><span class="iu">원</span></div></div>
-      </div>
-    </div>
-  </div>
-
   <!-- 결과 -->
   <div id="result-section" style="display:none">
     <div id="hero"></div>
     <div class="panel" id="room-rev-panel"></div>
     <div class="panel" id="income-panel"></div>
-    <div class="panel" id="tax-panel"></div>
     <div class="footnote">
       ※ 주중 월 21.74박 (5/7×30.44), 주말 월 8.70박 (2/7×30.44) 기준.<br>
-      ※ 법인세: 과세표준 2억 이하 9%, 초과분 19% + 지방소득세 10%.<br>
-      ※ 배당소득세: 금융소득 2천만원 이하 15.4%, 초과분 종합과세.<br>
-      ※ 4대보험: 건강보험 3.545%, 장기요양 0.459%, 국민연금 4.5%(상한 660만), 고용보험 0.9%.
+      ※ 캡슐 1인실: 캡슐 1개당 단가 / 4·8인실: 객실 1개당 단가 기준.<br>
+      ※ 배당·급여 세금 및 최종 수취액은 <strong>통합 계산기</strong>에서 확인하세요.
     </div>
   </div>
 
@@ -262,11 +240,9 @@
 <script src="js/tax.js"></script>
 <script src="js/store.js"></script>
 <script>
-// ── 상태 ──
-// 기본값: 1층 4인실×1, 2층 4인실×1+8인실×2, 3층 캡슐1인실×14
+// ── 상태 ── 기본값: 1층 4인실×1, 2층 4인실×1+8인실×2, 3층 캡슐1인실×14
 const rooms = { 1: 14, 4: 2, 8: 2 };
 let platform = 'air';
-let payout = 'div';
 let autoTimer;
 
 const v = id => document.getElementById(id).value;
@@ -311,26 +287,20 @@ function updateRoomUI() {
   updateWePrices();
 }
 
-// 층별 구성 표시 (4인실: 1층 1개 우선 → 나머지 2층, 8인실: 2층, 캡슐: 3층)
 function updateFloorDisplay(n1, n4, n8) {
   const f1_4 = Math.min(n4, 1);
   const f2_4 = n4 - f1_4;
-
   const fl1 = document.getElementById('fl1-detail');
   const fl2 = document.getElementById('fl2-detail');
   const fl3 = document.getElementById('fl3-detail');
-
   fl1.textContent = f1_4 > 0 ? `4인실 ${f1_4}개 (침대 ${f1_4*4}개)` : '—';
-
   const f2parts = [];
   if (f2_4 > 0) f2parts.push(`4인실 ${f2_4}개 (침대 ${f2_4*4}개)`);
   if (n8  > 0) f2parts.push(`8인실 ${n8}개 (침대 ${n8*8}개)`);
   fl2.textContent = f2parts.length ? f2parts.join(' + ') : '—';
-
   fl3.textContent = n1 > 0 ? `캡슐 1인실 ${n1}개` : '—';
 }
 
-// ── 단가 ──
 function updateWePrices() {
   const mult = +v('we-mult') || 1.3;
   [1, 4, 8].forEach(t => {
@@ -366,15 +336,6 @@ function checkMix() {
   el.style.color = Math.abs(s-100)<1 ? 'var(--co)' : 'var(--red)';
 }
 
-// ── 이익 수취 ──
-function setPayout(m) {
-  payout = m;
-  document.getElementById('ri-div').className = 'radio-item' + (m==='div'?' sel-hs':'');
-  document.getElementById('ri-sal').className = 'radio-item' + (m==='sal'?' sel-hs':'');
-  document.getElementById('sal-section').style.display = m==='sal' ? '' : 'none';
-  autoCalc();
-}
-
 // ── 계산 ──
 function autoCalc() {
   clearTimeout(autoTimer);
@@ -392,61 +353,51 @@ function calc() {
   const wdO = +v('occ-wd')/100, weO = +v('occ-we')/100;
   const fee = getEffFee();
 
-  // 타입별 월 매출 (단가 × 점유율 × 박수 × 객실수)
-  // 1인실(캡슐): 캡슐 1개당 단가 × 캡슐 수
-  // 4·8인실: 객실 1개당 단가 × 객실 수 (침대수 곱하지 않음)
   const revRoom = (wdP, weP, cnt) => {
     const gross = (wdP*wdO*WD_NIGHTS + weP*weO*WE_NIGHTS) * cnt;
     return { gross, net: gross*(1-fee) };
   };
-  const r1 = revRoom(wd1, we1, n1);   // 캡슐 1인실: 14개
-  const r4 = revRoom(wd4, we4, n4);   // 4인실: 2개 (객실당 단가)
-  const r8 = revRoom(wd8, we8, n8);   // 8인실: 2개 (객실당 단가)
+  const r1 = revRoom(wd1, we1, n1);
+  const r4 = revRoom(wd4, we4, n4);
+  const r8 = revRoom(wd8, we8, n8);
 
   const grossMo = r1.gross + r4.gross + r8.gross;
   const netMo   = r1.net   + r4.net   + r8.net;
   const totalBeds = n1 + n4*4 + n8*8;
 
-  // 비용
   const costs = {
-    rent:  +v('c-rent')||0, labor: +v('c-labor')||0,
-    util:  +v('c-util')||0, clean: +v('c-clean')||0,
+    rent: +v('c-rent')||0, labor: +v('c-labor')||0,
+    util: +v('c-util')||0, clean: +v('c-clean')||0,
     goods: +v('c-goods')||0, corp: +v('c-corp')||0,
-    loan:  +v('c-loan')||0, etc:   +v('c-etc')||0,
+    loan: +v('c-loan')||0, etc: +v('c-etc')||0,
   };
-  const costMo  = Object.values(costs).reduce((a,b)=>a+b,0);
-  const profMo  = netMo - costMo;
-  const netAn   = netMo*12;
-  const profAn  = profMo*12;
+  const costMo = Object.values(costs).reduce((a,b)=>a+b,0);
+  const profMo = netMo - costMo;
+  const netAn  = netMo * 12;
+  const profAn = profMo * 12;
 
   document.getElementById('cost-total').textContent = won(costMo);
-
-  // 세금
-  const salary   = +v('salary')||0;
-  const otherInc = +v('other-inc')||0;
-  const tx = calcTakeHome(profAn, payout, salary, otherInc);
+  document.getElementById('result-section').style.display = '';
 
   const feeLabel = { air:'에어비앤비 15.5%', book:'부킹닷컴 17.5%', direct:'직접예약 0%', mix:`혼합 ${(fee*100).toFixed(1)}%` }[platform];
 
-  document.getElementById('result-section').style.display = '';
-
-  // 히어로
+  // 히어로 — 세전 이익 표시
   document.getElementById('hero').innerHTML = `
     <div class="hero-card hs">
-      <div class="hero-eyebrow">연간 최종 수취액</div>
-      <div class="hero-amount">${won(Math.max(0,tx.takeHome))}</div>
+      <div class="hero-eyebrow">월 세전 영업이익 · 연 ${won(profAn)}</div>
+      <div class="hero-amount">${won(profMo)}</div>
       <div class="hero-sub">
-        캡슐 ${n1}개 · 4인실 ${n4}개 · 8인실 ${n8}개 (총 침대 ${totalBeds}개)
-        &nbsp;|&nbsp; ${feeLabel} &nbsp;|&nbsp; ${payout==='div'?'배당':'급여'} 방식
+        캡슐 ${n1}개 · 4인실 ${n4}개 · 8인실 ${n8}개 · ${feeLabel}
+        · 최종 세금은 통합 계산기에서
       </div>
       <div class="hero-grid">
-        <div class="hero-cell"><div class="hero-cell-label">월 총매출 (등록가 기준)</div><div class="hero-cell-val">${won(grossMo)}</div></div>
-        <div class="hero-cell"><div class="hero-cell-label">월 영업이익 (세전)</div><div class="hero-cell-val">${won(profMo)}</div></div>
-        <div class="hero-cell"><div class="hero-cell-label">법인세</div><div class="hero-cell-val">${won(tx.ct)}</div></div>
+        <div class="hero-cell"><div class="hero-cell-label">월 총매출</div><div class="hero-cell-val">${won(grossMo)}</div></div>
+        <div class="hero-cell"><div class="hero-cell-label">월 운영비용</div><div class="hero-cell-val">${won(costMo)}</div></div>
+        <div class="hero-cell"><div class="hero-cell-label">월 세전 이익</div><div class="hero-cell-val">${won(profMo)}</div></div>
       </div>
     </div>`;
 
-  // 객실별 매출 상세
+  // 객실별 매출
   const roomRows = [
     n1>0 ? `<div class="li"><span class="ll">🛌 캡슐 1인실 ${n1}개 (3층) — 캡슐당 주중 ${won(wd1)}/주말 ${won(we1)}</span><span class="lv hs">${won(r1.net)}</span></div>` : '',
     n4>0 ? `<div class="li"><span class="ll">🛏 4인실 ${n4}개 (1·2층) — 객실당 주중 ${won(wd4)}/주말 ${won(we4)}</span><span class="lv hs">${won(r4.net)}</span></div>` : '',
@@ -455,9 +406,6 @@ function calc() {
 
   document.getElementById('room-rev-panel').innerHTML = `
     <div class="pt">🏨 객실별 월 순매출 (수수료 ${(fee*100).toFixed(1)}% 차감 후)</div>
-    <div class="li" style="font-size:10.5px;color:var(--tm);padding-bottom:0;border-bottom:none">
-      ※ 캡슐 1인실: 캡슐 1개당 단가 × 14개 &nbsp;|&nbsp; 4·8인실: 객실 1개당 단가 × 객실수
-    </div>
     ${roomRows}
     <div class="li sub"><span class="ll">합계 월 순매출</span><span class="lv">${won(netMo)}</span></div>
     <div class="li" style="margin-top:4px"><span class="ll">연간 순매출</span><span class="lv hs">${won(netAn)}</span></div>`;
@@ -477,33 +425,16 @@ function calc() {
     <div class="li sub"><span class="ll">수수료 후 순매출</span><span class="lv">${won(netMo)}</span></div>
     ${costItems}
     <div class="li sub"><span class="ll">총 운영비용</span><span class="lv ng">−${won(costMo)}</span></div>
-    <div class="li total hs-bg"><span class="ll">월 영업이익 (세전)</span><span class="lv">${won(profMo)}</span></div>
-    <div class="li" style="margin-top:4px"><span class="ll">연간 영업이익</span><span class="lv hs">${won(profAn)}</span></div>`;
+    <div class="li total hs-bg"><span class="ll">월 세전 영업이익</span><span class="lv">${won(profMo)}</span></div>
+    <div class="li" style="margin-top:4px"><span class="ll">연간 세전 영업이익</span><span class="lv hs">${won(profAn)}</span></div>
+    <div style="margin-top:12px">
+      <a href="combined.html" class="go-combined">
+        <span>💡 배당·급여 세금 및 최종 수취액 계산하기</span>
+        <span class="arr">→</span>
+      </a>
+    </div>`;
 
-  // 세금 상세
-  document.getElementById('tax-panel').innerHTML = `
-    <div class="pt">🏦 연간 법인세 시뮬레이션</div>
-    <div class="li"><span class="ll">연간 세전 영업이익</span><span class="lv">${won(profAn)}</span></div>
-    ${payout==='sal'?`<div class="li"><span class="ll">대표이사 급여 (비용 처리)</span><span class="lv ng">−${won(salary)}</span></div>`:''}
-    <div class="li sub"><span class="ll">법인 과세표준</span><span class="lv">${won(tx.taxable)}</span></div>
-    <div class="li"><span class="ll">법인세 (2억 이하 9%, 초과 19%)</span><span class="lv ng">−${won(tx.ct/1.1)}</span></div>
-    <div class="li"><span class="ll">법인 지방소득세 (10%)</span><span class="lv ng">−${won(tx.ct/1.1*0.1)}</span></div>
-    <div class="li sub"><span class="ll">법인 세후 이익</span><span class="lv">${won(tx.afterCorp)}</span></div>
-    ${payout==='div'?`
-    <div class="li"><span class="ll">배당소득세 (15.4% 또는 종합과세)</span><span class="lv ng">−${won(tx.personalTax)}</span></div>
-    <div class="li total hs-bg"><span class="ll">연간 최종 수취액 (배당)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
-    <div class="li"><span class="ll">월 평균 수취액</span><span class="lv hs">${won(Math.max(0,tx.takeHome)/12)}</span></div>
-    `:`
-    <div class="li"><span class="ll">대표이사 급여</span><span class="lv">${won(salary)}</span></div>
-    <div class="li"><span class="ll">근로소득세 (지방세 포함)</span><span class="lv ng">−${won(tx.personalTax)}</span></div>
-    <div class="li"><span class="ll">4대보험 개인분</span><span class="lv ng">−${won(tx.ins)}</span></div>
-    ${tx.afterCorp>0?`<div class="li"><span class="ll">법인 잔여이익 배당 실수령</span><span class="lv ps">+${won(tx.afterCorp - dividendTax(tx.afterCorp, salary))}</span></div>`:''}
-    <div class="li total hs-bg"><span class="ll">연간 최종 수취액 (급여+배당)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
-    <div class="li"><span class="ll">월 평균 수취액</span><span class="lv hs">${won(Math.max(0,tx.takeHome)/12)}</span></div>
-    `}
-    <div class="li" style="margin-top:4px"><span class="ll">실효 수익률 (연간 순매출 대비)</span><span class="lv">${netAn>0?(Math.max(0,tx.takeHome)/netAn*100).toFixed(1):0}%</span></div>`;
-
-  // 자동 저장
+  // 자동 저장 (세전 이익만, 세후 수취액 제외)
   Store.save('hostel', {
     rooms: {...rooms},
     wdPrices: { 1: +v('wd1')||0, 4: +v('wd4')||0, 8: +v('wd8')||0 },
@@ -511,8 +442,7 @@ function calc() {
     wdOcc: +v('occ-wd'), weOcc: +v('occ-we'),
     platform,
     costs: {...costs},
-    payout, salary, otherInc,
-    computed: { grossMo, netMo, costMo, profMo, profAn, takeHome: Math.max(0,tx.takeHome) },
+    computed: { grossMo, netMo, costMo, profMo, profAn },
   });
 }
 
@@ -543,9 +473,6 @@ function saveData() {
       if (saved.wdOcc != null) { document.getElementById('occ-wd').value = saved.wdOcc; document.getElementById('occ-wd-disp').textContent = saved.wdOcc; }
       if (saved.weOcc != null) { document.getElementById('occ-we').value = saved.weOcc; document.getElementById('occ-we-disp').textContent = saved.weOcc; }
       if (saved.costs) { Object.entries(saved.costs).forEach(([k,val]) => { const el = document.getElementById('c-' + k); if (el) el.value = val; }); }
-      if (saved.payout) setPayout(saved.payout);
-      if (saved.salary)   document.getElementById('salary').value = saved.salary;
-      if (saved.otherInc) document.getElementById('other-inc').value = saved.otherInc;
       if (saved.platform) {
         platform = saved.platform;
         document.querySelectorAll('#plat-tabs .tab-btn').forEach(b => b.className = 'tab-btn');

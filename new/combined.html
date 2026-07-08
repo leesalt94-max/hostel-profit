@@ -166,7 +166,7 @@ function renderStatus() {
   }
   if (hsData) {
     const r = hsData.rooms||{};
-    const rDesc = [r[4]&&`4인실 ${r[4]}개`, r[6]&&`6인실 ${r[6]}개`, r[8]&&`8인실 ${r[8]}개`].filter(Boolean).join(' + ');
+    const rDesc = [r[1]&&`캡슐 1인실 ${r[1]}개`, r[4]&&`4인실 ${r[4]}개`, r[8]&&`8인실 ${r[8]}개`].filter(Boolean).join(' + ');
     html += `<div class="profit-item hs-item">
       <div class="pi-icon">🏨</div>
       <div class="pi-body">
@@ -183,26 +183,9 @@ function renderStatus() {
 
 function setPayout(m) {
   payout = m;
-  document.getElementById('ri-div').className = 'radio-item' + (m==='div'?' sel':'');
-  document.getElementById('ri-sal').className = 'radio-item' + (m==='sal'?' sel':'');
-  // co 색으로 dot 변경
-  ['ri-div','ri-sal'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el.classList.contains('sel')) {
-      el.style.borderColor = 'var(--co)';
-      el.style.background  = 'var(--co-l)';
-      el.querySelector('.radio-dot').style.background = 'var(--co)';
-      el.querySelector('.radio-dot').style.borderColor = 'var(--co)';
-      el.querySelector('.radio-inner').style.display = 'block';
-    } else {
-      el.style.borderColor = '';
-      el.style.background  = '';
-      el.querySelector('.radio-dot').style.background = '#fff';
-      el.querySelector('.radio-dot').style.borderColor = 'var(--bd)';
-      el.querySelector('.radio-inner').style.display = 'none';
-    }
-  });
-  document.getElementById('sal-section').style.display = m==='sal' ? '' : 'none';
+  document.getElementById('ri-div').className = 'radio-item' + (m==='div' ? ' sel-co' : '');
+  document.getElementById('ri-sal').className = 'radio-item' + (m==='sal' ? ' sel-co' : '');
+  document.getElementById('sal-section').style.display = m === 'sal' ? '' : 'none';
   calc();
 }
 

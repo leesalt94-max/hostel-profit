@@ -26,6 +26,13 @@
 .unit-rev-row { background: var(--ag-l); border-radius: 8px; padding: 8px 12px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; }
 .unit-rev-row .label { font-size: 11px; color: var(--ag); font-weight: 500; }
 .unit-rev-row .val { font-size: 16px; font-weight: 800; color: var(--ag); }
+.go-combined {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--co-l); border: 1px solid #99f6e4;
+  border-radius: 10px; margin-top: 10px; text-decoration: none;
+}
+.go-combined span { font-size: 12px; font-weight: 700; color: var(--co-d); }
+.go-combined .arr { font-size: 16px; color: var(--co); }
 </style>
 </head>
 <body>
@@ -37,7 +44,8 @@
 <div class="wrap">
   <div class="page-hdr">
     <h1>법인 운영대행 계산기</h1>
-    <p>숙소별 단가·점유율 입력 → 대행 수수료 수입 → 법인세 → 최종 수취액</p>
+    <p>숙소별 단가·점유율 입력 → 대행 수수료 수입 → 법인 세전 이익<br>
+    <span style="font-size:11px;color:var(--co);font-weight:600">💡 배당·급여 세금 계산은 '통합 계산기'에서 진행합니다</span></p>
   </div>
 
   <!-- ① 숙소 목록 -->
@@ -72,54 +80,18 @@
     </div>
   </div>
 
-  <!-- ③ 이익 수취 방식 -->
-  <div class="panel ag-border">
-    <div class="pt">⚖️ 이익 수취 방식</div>
-    <div class="radio-grid">
-      <div class="radio-item sel-ag" id="ri-div" onclick="setPayout('div')">
-        <div class="radio-dot"><div class="radio-inner"></div></div>
-        <div class="radio-text">
-          <strong>배당으로 수취</strong>
-          <span>법인세 후 배당소득세 15.4%<br>4대보험 없음</span>
-        </div>
-      </div>
-      <div class="radio-item" id="ri-sal" onclick="setPayout('sal')">
-        <div class="radio-dot"><div class="radio-inner"></div></div>
-        <div class="radio-text">
-          <strong>급여로 수취</strong>
-          <span>법인 비용 처리로 절세<br>근로소득세 + 4대보험</span>
-        </div>
-      </div>
-    </div>
-    <div id="sal-section" style="display:none; margin-top:12px">
-      <div class="pst">급여 설정</div>
-      <div class="igrid">
-        <div class="ig">
-          <label>대표이사 연간 급여</label>
-          <div class="ir ag"><input type="number" id="salary" value="36000000" step="1000000" oninput="autoCalc()"><span class="iu">원/년</span></div>
-        </div>
-        <div class="ig">
-          <label>기타 소득 (연간)</label>
-          <div class="ir ag"><input type="number" id="other-inc" value="0" step="1000000" oninput="autoCalc()"><span class="iu">원</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ④ 결과 -->
+  <!-- ③ 결과 -->
   <div id="result-section" style="display:none">
     <div id="hero"></div>
     <div class="panel" id="unit-rev-panel"></div>
     <div class="panel" id="corp-panel"></div>
-    <div class="panel" id="tax-panel"></div>
     <div class="footnote">
-      ※ 법인세: 과세표준 2억 이하 9%, 초과분 19% + 지방소득세 10%.<br>
-      ※ 배당소득세: 금융소득 2천만원 이하 15.4% 분리과세, 초과분 종합과세.<br>
-      ※ 4대보험: 건강보험 3.545%, 장기요양 0.459%, 국민연금 4.5%(상한 660만), 고용보험 0.9% 기준.
+      ※ 주중 월 21.74박 (5/7×30.44), 주말 월 8.70박 (2/7×30.44) 기준.<br>
+      ※ 대행 수수료는 플랫폼 수수료 차감 후 호스트 순수령액 기준입니다.<br>
+      ※ 배당·급여 세금 및 최종 수취액은 <strong>통합 계산기</strong>에서 확인하세요.
     </div>
   </div>
 
-  <!-- 저장 버튼 -->
   <button class="save-btn" onclick="saveData()">💾 저장 (통합 계산기 연동)</button>
   <div class="save-ok" id="save-ok">✅ 저장되었습니다!</div>
 </div>
@@ -128,7 +100,6 @@
 <script src="js/store.js"></script>
 <script>
 // ── 상태 ──
-let payout = 'div';
 let units = [];
 let autoTimer;
 
@@ -283,25 +254,19 @@ function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').r
 // ── 단가 동기화 ──
 function onWdChange(i) {
   if (units[i].weMode === 'mult') syncWePriceDisplay(i);
-  else { /* direct 모드엔 영향 없음 */ }
   autoCalc();
 }
 
 function syncWePriceDisplay(i) {
   const u = units[i];
-  const weP = u.weMode === 'mult'
-    ? Math.round(u.wdPrice * u.weMult)
-    : u.wePrice;
+  const weP = u.weMode === 'mult' ? Math.round(u.wdPrice * u.weMult) : u.wePrice;
   const mult = u.wdPrice > 0 ? (weP / u.wdPrice).toFixed(2) : '—';
-
   const multEl = document.getElementById(`umultval-${i}`);
   if (multEl) multEl.textContent = (u.weMult || 1).toFixed(2);
-
   const prevVal  = document.getElementById(`we-prev-val-${i}`);
   const prevMult = document.getElementById(`we-prev-mult-${i}`);
   if (prevVal)  prevVal.textContent  = weP ? weP.toLocaleString('ko-KR') + '원' : '—';
   if (prevMult) prevMult.textContent = `주중의 ${mult}배`;
-
   updateUnitRevBadge(i);
 }
 
@@ -334,9 +299,6 @@ function setPlat(i, p, btn) {
 
 function updateUnitRevBadge(i) {
   const u = units[i];
-  const weP = u.weMode === 'mult' ? u.wdPrice * u.weMult : u.wePrice;
-  const r = calcUnitRevenue(u.wdPrice, weP / (u.wdPrice || 1), u.wdOcc, u.weOcc, u.platform);
-  // actually recompute correctly
   const fee = PLATFORM_FEE[u.platform] ?? 0;
   const wePfinal = u.weMode === 'mult' ? u.wdPrice * u.weMult : u.wePrice;
   const grossMo = u.wdPrice * (u.wdOcc/100) * WD_NIGHTS + wePfinal * (u.weOcc/100) * WE_NIGHTS;
@@ -345,15 +307,6 @@ function updateUnitRevBadge(i) {
   const revEl = document.getElementById(`urev-${i}`);
   if (badge) badge.textContent = '연 ' + won(netAnnual);
   if (revEl)  revEl.textContent = won(netAnnual);
-}
-
-// ── 이익 수취 방식 ──
-function setPayout(m) {
-  payout = m;
-  document.getElementById('ri-div').className = 'radio-item' + (m==='div' ? ' sel-ag' : '');
-  document.getElementById('ri-sal').className = 'radio-item' + (m==='sal' ? ' sel-ag' : '');
-  document.getElementById('sal-section').style.display = m === 'sal' ? '' : 'none';
-  autoCalc();
 }
 
 // ── 계산 ──
@@ -369,45 +322,38 @@ function getUnitWePrice(u) {
 function calc() {
   if (!units.length) return;
 
-  const agRate    = (+document.getElementById('agency-rate').value || 0) / 100;
+  const agRate     = (+document.getElementById('agency-rate').value || 0) / 100;
   const corpCostMo = +document.getElementById('corp-cost').value || 0;
-  const salary    = +document.getElementById('salary').value || 0;
-  const otherInc  = +document.getElementById('other-inc').value || 0;
 
   // 숙소별 계산
   const unitResults = units.map(u => {
     const weP = getUnitWePrice(u);
     const fee = PLATFORM_FEE[u.platform] ?? 0;
-    const grossMo = u.wdPrice*(u.wdOcc/100)*WD_NIGHTS + weP*(u.weOcc/100)*WE_NIGHTS;
-    const netMo   = grossMo * (1 - fee);
+    const grossMo  = u.wdPrice*(u.wdOcc/100)*WD_NIGHTS + weP*(u.weOcc/100)*WE_NIGHTS;
+    const netMo    = grossMo * (1 - fee);
     return { name: u.name, grossMo, netMo, grossAnnual: grossMo*12, netAnnual: netMo*12, fee };
   });
 
-  const totalGrossAnnual = unitResults.reduce((s, r) => s + r.grossAnnual, 0);
-  const totalNetAnnual   = unitResults.reduce((s, r) => s + r.netAnnual,   0);
-  const agencyIncome     = totalNetAnnual * agRate;
-  const corpCostAnnual   = corpCostMo * 12;
-  const preTaxProfit     = agencyIncome - corpCostAnnual;
+  const totalNetAnnual = unitResults.reduce((s, r) => s + r.netAnnual, 0);
+  const agencyIncome   = totalNetAnnual * agRate;
+  const corpCostAnnual = corpCostMo * 12;
+  const preTaxProfit   = agencyIncome - corpCostAnnual;
 
-  // 세금
-  const tx = calcTakeHome(preTaxProfit, payout, salary, otherInc);
-
-  // UI
   document.getElementById('result-section').style.display = '';
 
-  // 히어로
+  // 히어로 — 세전 이익 표시
   document.getElementById('hero').innerHTML = `
     <div class="hero-card ag">
-      <div class="hero-eyebrow">연간 최종 수취액</div>
-      <div class="hero-amount">${won(Math.max(0, tx.takeHome))}</div>
+      <div class="hero-eyebrow">법인 연간 세전 이익</div>
+      <div class="hero-amount">${won(Math.max(0, preTaxProfit))}</div>
       <div class="hero-sub">
-        ${units.length}개 숙소 &nbsp;|&nbsp; 대행 수수료 ${Math.round(agRate*100)}%
-        &nbsp;|&nbsp; 법인세 후 수취 ${payout==='div'?'(배당)':'(급여)'}
+        ${units.length}개 숙소 · 대행 수수료 ${Math.round(agRate*100)}%
+        · 최종 세금은 통합 계산기에서
       </div>
       <div class="hero-grid">
-        <div class="hero-cell"><div class="hero-cell-label">숙소 합산 연간 순매출</div><div class="hero-cell-val">${won(totalNetAnnual)}</div></div>
+        <div class="hero-cell"><div class="hero-cell-label">합산 연간 순매출</div><div class="hero-cell-val">${won(totalNetAnnual)}</div></div>
         <div class="hero-cell"><div class="hero-cell-label">법인 대행수입</div><div class="hero-cell-val">${won(agencyIncome)}</div></div>
-        <div class="hero-cell"><div class="hero-cell-label">법인세</div><div class="hero-cell-val">${won(tx.ct)}</div></div>
+        <div class="hero-cell"><div class="hero-cell-label">법인 유지비 (연간)</div><div class="hero-cell-val">${won(corpCostAnnual)}</div></div>
       </div>
     </div>`;
 
@@ -427,35 +373,16 @@ function calc() {
     <div class="pt">📋 법인 연간 손익</div>
     <div class="li"><span class="ll">대행 수수료 수입</span><span class="lv ag">${won(agencyIncome)}</span></div>
     <div class="li"><span class="ll">법인 유지비 (월 ${won(corpCostMo)} × 12)</span><span class="lv ng">−${won(corpCostAnnual)}</span></div>
-    ${payout==='sal'?`<div class="li"><span class="ll">대표이사 급여 (비용 처리)</span><span class="lv ng">−${won(salary)}</span></div>`:''}
-    <div class="li total ag-bg"><span class="ll">법인 과세이익</span><span class="lv">${won(Math.max(0,tx.taxable))}</span></div>`;
-
-  // 세금 상세
-  document.getElementById('tax-panel').innerHTML = `
-    <div class="pt">🏦 세금 시뮬레이션</div>
-    <div class="li"><span class="ll">법인 과세이익</span><span class="lv">${won(tx.taxable)}</span></div>
-    <div class="li"><span class="ll">법인세 (2억 이하 9%, 초과 19%)</span><span class="lv ng">−${won(tx.ct/1.1)}</span></div>
-    <div class="li"><span class="ll">법인 지방소득세 (법인세의 10%)</span><span class="lv ng">−${won(tx.ct/1.1*0.1)}</span></div>
-    <div class="li sub"><span class="ll">법인 세후 이익 (배당 가능액)</span><span class="lv">${won(tx.afterCorp)}</span></div>
-    ${payout==='div'?`
-    <div class="li"><span class="ll">배당소득세 (15.4% 또는 종합과세)</span><span class="lv ng">−${won(tx.personalTax)}</span></div>
-    <div class="li total ag-bg"><span class="ll">연간 최종 수취액 (배당)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
-    <div class="li"><span class="ll">월 평균 수취액</span><span class="lv ag">${won(Math.max(0,tx.takeHome)/12)}</span></div>
-    `:`
-    <div class="li"><span class="ll">대표이사 급여</span><span class="lv">${won(salary)}</span></div>
-    <div class="li"><span class="ll">근로소득세 (지방세 포함)</span><span class="lv ng">−${won(tx.personalTax)}</span></div>
-    <div class="li"><span class="ll">4대보험 개인분</span><span class="lv ng">−${won(tx.ins)}</span></div>
-    ${tx.afterCorp>0?`<div class="li"><span class="ll">법인 잔여이익 배당 후 실수령</span><span class="lv ps">+${won(tx.afterCorp - dividendTax(tx.afterCorp, salary))}</span></div>`:''}
-    <div class="li total ag-bg"><span class="ll">연간 최종 수취액 (급여+배당)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
-    <div class="li"><span class="ll">월 평균 수취액</span><span class="lv ag">${won(Math.max(0,tx.takeHome)/12)}</span></div>
-    `}`;
+    <div class="li total ag-bg"><span class="ll">법인 세전 이익</span><span class="lv">${won(Math.max(0, preTaxProfit))}</span></div>
+    <div style="margin-top:12px">
+      <a href="combined.html" class="go-combined">
+        <span>💡 배당·급여 세금 및 최종 수취액 계산하기</span>
+        <span class="arr">→</span>
+      </a>
+    </div>`;
 
   // 자동 저장
-  Store.save('agency', buildSaveData(agRate, corpCostMo, agencyIncome, preTaxProfit, tx));
-}
-
-function buildSaveData(agRate, corpCostMo, agencyIncome, preTaxProfit, tx) {
-  return {
+  Store.save('agency', {
     units: units.map(u => ({
       name: u.name, wdPrice: u.wdPrice, weMode: u.weMode,
       weMult: u.weMult, wePrice: u.wePrice,
@@ -463,16 +390,8 @@ function buildSaveData(agRate, corpCostMo, agencyIncome, preTaxProfit, tx) {
     })),
     agencyRate: Math.round(agRate * 100),
     corpCostMo,
-    payout,
-    salary: +document.getElementById('salary').value || 0,
-    otherInc: +document.getElementById('other-inc').value || 0,
-    computed: {
-      agencyIncome,
-      corpCostAnnual: corpCostMo * 12,
-      preTaxProfit,
-      takeHome: Math.max(0, tx.takeHome),
-    },
-  };
+    computed: { agencyIncome, corpCostAnnual, preTaxProfit },
+  });
 }
 
 function saveData() {
@@ -490,9 +409,6 @@ function saveData() {
     setTimeout(() => {
       if (saved.agencyRate) document.getElementById('agency-rate').value = saved.agencyRate;
       if (saved.corpCostMo) document.getElementById('corp-cost').value   = saved.corpCostMo;
-      if (saved.payout) setPayout(saved.payout);
-      if (saved.salary)   document.getElementById('salary').value    = saved.salary;
-      if (saved.otherInc) document.getElementById('other-inc').value  = saved.otherInc;
       calc();
     }, 50);
   } else {

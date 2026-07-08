@@ -149,18 +149,21 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px;
 .radio-item:hover, .radio-item.sel { border-color: var(--acc); background: #EEF0FF; }
 .radio-item.sel-ag { border-color: var(--ag); background: var(--ag-l); }
 .radio-item.sel-hs { border-color: var(--hs); background: var(--hs-l); }
+.radio-item.sel-co { border-color: var(--co); background: var(--co-l); }
 .radio-dot {
   width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--bd);
   flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center;
   background: #fff; transition: all .15s;
 }
 .radio-item.sel .radio-dot,
-.radio-item.sel-ag .radio-dot,
-.radio-item.sel-hs .radio-dot { border-color: var(--ag); background: var(--ag); }
+.radio-item.sel-ag .radio-dot { border-color: var(--ag); background: var(--ag); }
+.radio-item.sel-hs .radio-dot { border-color: var(--hs); background: var(--hs); }
+.radio-item.sel-co .radio-dot { border-color: var(--co); background: var(--co); }
 .radio-inner { width: 5px; height: 5px; border-radius: 50%; background: #fff; display: none; }
 .radio-item.sel .radio-inner,
 .radio-item.sel-ag .radio-inner,
-.radio-item.sel-hs .radio-inner { display: block; }
+.radio-item.sel-hs .radio-inner,
+.radio-item.sel-co .radio-inner { display: block; }
 .radio-text strong { display: block; font-size: 12px; font-weight: 700; color: var(--tp); margin-bottom: 2px; }
 .radio-text span { font-size: 10.5px; color: var(--ts); line-height: 1.4; }
 
