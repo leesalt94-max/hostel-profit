@@ -81,13 +81,6 @@
       <div class="pst">💰 법인 청구 경비 (법인이 선납 후 호스트에 청구)</div>
       <div class="igrid">
         <div class="ig">
-          <label>월 임차료 (선납 후 청구)</label>
-          <div class="ir ag">
-            <input type="number" id="billed-rent-mo" value="0" step="100000" oninput="autoCalc()">
-            <span class="iu">원/월</span>
-          </div>
-        </div>
-        <div class="ig">
           <label>연간 인건비 (청소·관리 인력)</label>
           <div class="ir ag">
             <input type="number" id="billed-labor" value="0" step="1000000" oninput="autoCalc()">
@@ -103,7 +96,8 @@
         </div>
       </div>
       <div class="info-box we-bg" style="margin-top:8px">
-        법인이 먼저 지불하고 호스트에게 청구하는 경비입니다. 법인 손익에는 영향 없음 (수입=지출 상계). 통합 계산기에 자동 반영됩니다.
+        법인이 먼저 지불하고 호스트에게 청구하는 경비입니다. 법인 손익에는 영향 없음 (수입=지출 상계). 통합 계산기에 자동 반영됩니다.<br>
+        <span style="color:#92400e">※ 월 임차료는 호스트가 직접 부담하므로 이 항목에 포함되지 않습니다.</span>
       </div>
     </div>
   </div>
@@ -354,13 +348,11 @@ function calc() {
   const agRate     = (+document.getElementById('agency-rate').value || 0) / 100;
   const corpCostMo = +document.getElementById('corp-cost').value || 0;
 
-  // 법인 청구 경비 (호스트에게 청구)
-  const billedRentMo      = +document.getElementById('billed-rent-mo').value   || 0;
-  const billedLaborAnnual = +document.getElementById('billed-labor').value      || 0;
+  // 법인 청구 경비 (호스트에게 청구) — 임차료 제외 (호스트 직접 부담)
+  const billedLaborAnnual = +document.getElementById('billed-labor').value     || 0;
   const billedEquipMo     = +document.getElementById('billed-equip-mo').value  || 0;
-  const billedRentAnnual  = billedRentMo * 12;
   const billedEquipAnnual = billedEquipMo * 12;
-  const billedExpTotal    = billedRentAnnual + billedLaborAnnual + billedEquipAnnual;
+  const billedExpTotal    = billedLaborAnnual + billedEquipAnnual;
 
   // 숙소별 계산
   const unitResults = units.map(u => {
@@ -430,9 +422,8 @@ function calc() {
     <div class="li sub"><span class="ll">플랫폼 수수료 차감 후 수입금액</span><span class="lv">${won(totalNetAnnual)}</span></div>
     <div class="li"><span class="ll">법인 대행 수수료 (${Math.round(agRate*100)}%)</span><span class="lv ng">−${won(agencyIncome)}</span></div>
     ${billedExpTotal > 0 ? `
-    <div class="li" style="margin-top:4px"><span class="ll">법인 청구 경비 — 임차료</span><span class="lv ng">−${won(billedRentAnnual)}</span></div>
-    <div class="li"><span class="ll">법인 청구 경비 — 인건비</span><span class="lv ng">−${won(billedLaborAnnual)}</span></div>
-    <div class="li"><span class="ll">법인 청구 경비 — 비품</span><span class="lv ng">−${won(billedEquipAnnual)}</span></div>
+    <div class="li" style="margin-top:4px"><span class="ll">법인 청구 경비 — 인건비</span><span class="lv ng">−${won(billedLaborAnnual)}</span></div>
+    <div class="li"><span class="ll">법인 청구 경비 — 비품·소모품</span><span class="lv ng">−${won(billedEquipAnnual)}</span></div>
     <div class="li sub"><span class="ll">청구 경비 합계</span><span class="lv ng">−${won(billedExpTotal)}</span></div>
     ` : ''}
     <div class="li total ag-bg"><span class="ll">호스트 연간 최종 실수취 (세전)</span><span class="lv">${won(Math.max(0, hostNetAfterBilled))}</span></div>
@@ -458,13 +449,13 @@ function calc() {
     })),
     agencyRate: Math.round(agRate * 100),
     corpCostMo,
-    billedRentMo, billedLaborAnnual, billedEquipMo,
+    billedLaborAnnual, billedEquipMo,
     computed: {
       agencyIncome, corpCostAnnual, preTaxProfit,
       hostGrossAnnual: totalGrossAnnual,
       hostNetBeforeAgency: totalNetAnnual,
       hostNetAnnual,
-      billedRentAnnual, billedLaborAnnual, billedEquipAnnual, billedExpTotal,
+      billedLaborAnnual, billedEquipAnnual, billedExpTotal,
       hostNetAfterBilled: Math.max(0, hostNetAnnual - billedExpTotal),
     },
   });
@@ -483,10 +474,9 @@ function saveData() {
   if (saved && saved.units && saved.units.length) {
     units = saved.units.map((u, i) => ({ ...mkUnit(i), ...u, id: i }));
     setTimeout(() => {
-      if (saved.agencyRate)        document.getElementById('agency-rate').value    = saved.agencyRate;
-      if (saved.corpCostMo)        document.getElementById('corp-cost').value      = saved.corpCostMo;
-      if (saved.billedRentMo)      document.getElementById('billed-rent-mo').value = saved.billedRentMo;
-      if (saved.billedLaborAnnual) document.getElementById('billed-labor').value   = saved.billedLaborAnnual;
+      if (saved.agencyRate)        document.getElementById('agency-rate').value     = saved.agencyRate;
+      if (saved.corpCostMo)        document.getElementById('corp-cost').value       = saved.corpCostMo;
+      if (saved.billedLaborAnnual) document.getElementById('billed-labor').value    = saved.billedLaborAnnual;
       if (saved.billedEquipMo)     document.getElementById('billed-equip-mo').value = saved.billedEquipMo;
       calc();
     }, 50);
