@@ -109,6 +109,12 @@ function calcTakeHome(preTaxProfit, payout, salary = 0, otherInc = 0, skipCorpTa
   if (payout === 'div') {
     personalTax = dividendTax(afterCorp, otherInc);
     takeHome    = afterCorp - personalTax;
+  } else if (payout === 'ret') {
+    // 법인 유보: afterCorp stays in corp, only salary is personal income
+    const taxableWage = Math.max(0, salary - wageDeduction(salary) - 1_500_000);
+    personalTax = Math.max(0, incomeTax(taxableWage + otherInc) - incomeTax(otherInc));
+    ins         = socialInsurance(salary);
+    takeHome    = salary - personalTax - ins;
   } else {
     const taxableWage = Math.max(0, salary - wageDeduction(salary) - 1_500_000);
     personalTax = Math.max(0, incomeTax(taxableWage + otherInc) - incomeTax(otherInc));

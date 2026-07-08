@@ -81,10 +81,10 @@
       <div class="pst">💰 법인 청구 경비 (법인이 선납 후 호스트에 청구)</div>
       <div class="igrid">
         <div class="ig">
-          <label>연간 인건비 (청소·관리 인력)</label>
+          <label>월 인건비 (청소·관리 인력)</label>
           <div class="ir ag">
-            <input type="number" id="billed-labor" value="0" step="1000000" oninput="autoCalc()">
-            <span class="iu">원/년</span>
+            <input type="number" id="billed-labor-mo" value="0" step="100000" oninput="autoCalc()">
+            <span class="iu">원/월</span>
           </div>
         </div>
         <div class="ig">
@@ -349,8 +349,9 @@ function calc() {
   const corpCostMo = +document.getElementById('corp-cost').value || 0;
 
   // 법인 청구 경비 (호스트에게 청구) — 임차료 제외 (호스트 직접 부담)
-  const billedLaborAnnual = +document.getElementById('billed-labor').value     || 0;
+  const billedLaborMo     = +document.getElementById('billed-labor-mo').value  || 0;
   const billedEquipMo     = +document.getElementById('billed-equip-mo').value  || 0;
+  const billedLaborAnnual = billedLaborMo * 12;
   const billedEquipAnnual = billedEquipMo * 12;
   const billedExpTotal    = billedLaborAnnual + billedEquipAnnual;
 
@@ -449,7 +450,7 @@ function calc() {
     })),
     agencyRate: Math.round(agRate * 100),
     corpCostMo,
-    billedLaborAnnual, billedEquipMo,
+    billedLaborMo, billedEquipMo,
     computed: {
       agencyIncome, corpCostAnnual, preTaxProfit,
       hostGrossAnnual: totalGrossAnnual,
@@ -476,7 +477,7 @@ function saveData() {
     setTimeout(() => {
       if (saved.agencyRate)        document.getElementById('agency-rate').value     = saved.agencyRate;
       if (saved.corpCostMo)        document.getElementById('corp-cost').value       = saved.corpCostMo;
-      if (saved.billedLaborAnnual) document.getElementById('billed-labor').value    = saved.billedLaborAnnual;
+      if (saved.billedLaborMo) document.getElementById('billed-labor-mo').value = saved.billedLaborMo;
       if (saved.billedEquipMo)     document.getElementById('billed-equip-mo').value = saved.billedEquipMo;
       calc();
     }, 50);

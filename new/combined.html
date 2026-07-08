@@ -32,6 +32,9 @@
 .section-divider-label { font-size: 11px; font-weight: 700; color: var(--ts); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
 .exp-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--dv); }
 .no-corp-tax-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:3px 10px; border-radius:100px; background:#fef3c7; color:#92400e; border:1px solid #fde68a; margin-left:8px; vertical-align:middle; }
+.radio-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+@media (max-width:480px) { .radio-grid-3 { grid-template-columns:1fr; } }
+.vat-warn-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:3px 10px; border-radius:100px; background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; margin-left:8px; vertical-align:middle; }
 </style>
 </head>
 <body>
@@ -67,7 +70,7 @@
   <!-- 이익 수취 방식 -->
   <div class="panel co-border" id="payout-panel" style="display:none">
     <div class="pt">⚖️ 이익 수취 방식 (대표이사)</div>
-    <div class="radio-grid">
+    <div class="radio-grid-3">
       <div class="radio-item" id="ri-div" onclick="setPayout('div')">
         <div class="radio-dot"><div class="radio-inner"></div></div>
         <div class="radio-text">
@@ -80,6 +83,13 @@
         <div class="radio-text">
           <strong>급여로 수취</strong>
           <span>법인 비용 처리로 절세<br>근로소득세 + 4대보험</span>
+        </div>
+      </div>
+      <div class="radio-item" id="ri-ret" onclick="setPayout('ret')">
+        <div class="radio-dot"><div class="radio-inner"></div></div>
+        <div class="radio-text">
+          <strong>법인 유보</strong>
+          <span>이익을 법인에 적립<br>급여만 개인 수취</span>
         </div>
       </div>
     </div>
@@ -339,7 +349,8 @@ function setPayout(m) {
   payout = m;
   document.getElementById('ri-div').className = 'radio-item' + (m==='div' ? ' sel-co' : '');
   document.getElementById('ri-sal').className = 'radio-item' + (m==='sal' ? ' sel-co' : '');
-  document.getElementById('sal-section').style.display = m === 'sal' ? '' : 'none';
+  document.getElementById('ri-ret').className = 'radio-item' + (m==='ret' ? ' sel-co' : '');
+  document.getElementById('sal-section').style.display = (m === 'sal' || m === 'ret') ? '' : 'none';
   calc();
 }
 
@@ -369,10 +380,10 @@ function calc() {
 
   document.getElementById('hero').innerHTML = `
     <div class="hero-card co">
-      <div class="hero-eyebrow">법인 통합 — 연간 최종 수취액 (대표이사)</div>
+      <div class="hero-eyebrow">법인 통합 — 연간 최종 수취액 (대표이사${payout==='ret'?' · 급여만':''})</div>
       <div class="hero-amount">${won(Math.max(0, tx.takeHome))}</div>
       <div class="hero-sub">
-        ${parts.join(' + ')} 합산 &nbsp;|&nbsp; ${payout==='div'?'배당':'급여'} 방식
+        ${parts.join(' + ')} 합산 &nbsp;|&nbsp; ${payout==='div'?'배당':payout==='ret'?'법인유보':'급여'} 방식
         ${noCorpTax ? ' &nbsp;|&nbsp; 법인세 0원' : ''}
       </div>
       <div class="hero-grid">
@@ -399,6 +410,13 @@ function calc() {
     <div class="li"><span class="ll">배당소득세 (15.4% 또는 종합과세)</span><span class="lv ng">−${won(tx.personalTax)}</span></div>
     <div class="li total co-bg"><span class="ll">연간 최종 수취액 (배당)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
     <div class="li"><span class="ll">월 평균 수취액</span><span class="lv co">${won(Math.max(0,tx.takeHome)/12)}</span></div>
+    `:payout==='ret'?`
+    <div class="li" style="background:#f0fdf4;border-radius:8px;padding:10px 14px;margin:6px 0"><span class="ll" style="color:#166534;font-weight:700">법인 유보금 (당기 적립)</span><span class="lv" style="color:#16a34a;font-weight:700">${won(tx.afterCorp)}</span></div>
+    <div class="li"><span class="ll">대표이사 급여</span><span class="lv">${won(salary)}</span></div>
+    <div class="li"><span class="ll">근로소득세 (지방세 포함)</span><span class="lv ng">−${won(tx.personalTax)}</span></div>
+    <div class="li"><span class="ll">4대보험 개인분</span><span class="lv ng">−${won(tx.ins)}</span></div>
+    <div class="li total co-bg"><span class="ll">연간 최종 수취액 (급여만)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
+    <div class="li"><span class="ll">월 평균 수취액 (급여 기준)</span><span class="lv co">${won(Math.max(0,tx.takeHome)/12)}</span></div>
     `:`
     <div class="li"><span class="ll">대표이사 급여</span><span class="lv">${won(salary)}</span></div>
     <div class="li"><span class="ll">근로소득세 (지방세 포함)</span><span class="lv ng">−${won(tx.personalTax)}</span></div>
@@ -439,11 +457,20 @@ function calc() {
     const hostIT          = hostITTotal / 1.1;
     const hostLocalIT     = hostITTotal - hostIT;
 
-    // 부가가치세
-    let hostVat, vatDesc;
+    // 부가가치세 (간이과세 기준금액 적용)
+    let hostVat, vatDesc, vatWarn = '';
     if (vatType === 'simplified') {
-      hostVat = hostGross * 0.04;
-      vatDesc = '간이과세 — 숙박업 부가가치율 40% × 10% ≈ 4%';
+      if (hostGross < 48_000_000) {
+        hostVat = 0;
+        vatDesc = `간이과세 납부 면제 — 연매출 ${won(hostGross)} (기준 4,800만원 미만)`;
+      } else if (hostGross < 80_000_000) {
+        hostVat = hostGross * 0.04;
+        vatDesc = `간이과세 — 숙박업 부가가치율 40% × 10% ≈ 4% (4,800만원 이상 8,000만원 미만)`;
+      } else {
+        hostVat = hostGross * 0.04;
+        vatDesc = `간이과세 — 숙박업 부가가치율 40% × 10% ≈ 4% (참고: 8,000만원 이상은 일반과세자 전환 대상)`;
+        vatWarn = '<span class="vat-warn-badge">⚠️ 일반과세자 전환 대상</span>';
+      }
     } else {
       const inputVat = +document.getElementById('host-input-vat').value || 0;
       hostVat = Math.max(0, hostGross * 0.1 - inputVat);
@@ -497,8 +524,8 @@ function calc() {
       <div class="li"><span class="ll">지방소득세 (10%)</span><span class="lv ng">−${won(hostLocalIT)}</span></div>
       <div class="li sub"><span class="ll">소득세 합계</span><span class="lv ng">−${won(hostITTotal)}</span></div>
 
-      <div class="pst" style="margin-top:14px;margin-bottom:8px">${hostOtherInc > 0 ? '⑥' : '⑤'} 부가가치세</div>
-      <div class="li"><span class="ll">부가가치세 (${vatType==='simplified'?'간이과세':'일반과세'})</span><span class="lv ng">−${won(hostVat)}</span></div>
+      <div class="pst" style="margin-top:14px;margin-bottom:8px">${hostOtherInc > 0 ? '⑥' : '⑤'} 부가가치세 ${vatWarn}</div>
+      <div class="li"><span class="ll">부가가치세 (${vatType==='simplified'?'간이과세':'일반과세'})</span><span class="lv ng">${hostVat > 0 ? '−' : ''}${won(hostVat)}</span></div>
       <div class="li" style="font-size:10.5px;color:var(--ts);padding:3px 0 10px">${vatDesc}</div>
 
       <div class="pst" style="margin-bottom:8px">${hostOtherInc > 0 ? '⑦' : '⑥'} 최종 실수취 (현금 기준)</div>
