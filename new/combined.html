@@ -27,6 +27,10 @@
 .tpb-label { font-size: 11px; font-weight: 600; opacity: .7; margin-bottom: 6px; letter-spacing: .06em; text-transform: uppercase; }
 .tpb-val { font-size: 32px; font-weight: 800; letter-spacing: -1.5px; }
 .tpb-sub { font-size: 11px; opacity: .65; margin-top: 4px; }
+.host-total-box { background: linear-gradient(135deg, #064e3b, #065f46); border-radius: 12px; padding: 16px 18px; margin: 12px 0; color: #fff; }
+.section-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0 4px; }
+.section-divider-line { flex: 1; height: 1px; background: var(--dv); }
+.section-divider-label { font-size: 11px; font-weight: 700; color: var(--ts); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -48,6 +52,7 @@
     <div id="data-status"></div>
   </div>
 
+  <!-- ─── 법인 섹션 ─── -->
   <!-- 법인 합산 이익 -->
   <div class="panel co-border" id="profit-panel" style="display:none">
     <div class="pt">💼 법인 합산 과세이익</div>
@@ -61,7 +66,7 @@
 
   <!-- 이익 수취 방식 -->
   <div class="panel co-border" id="payout-panel" style="display:none">
-    <div class="pt">⚖️ 이익 수취 방식</div>
+    <div class="pt">⚖️ 이익 수취 방식 (대표이사)</div>
     <div class="radio-grid">
       <div class="radio-item" id="ri-div" onclick="setPayout('div')">
         <div class="radio-dot"><div class="radio-inner"></div></div>
@@ -87,15 +92,75 @@
     </div>
   </div>
 
+  <!-- ─── 호스트 섹션 ─── -->
+  <!-- 호스트 세금 설정 -->
+  <div class="panel co-border" id="host-settings-panel" style="display:none">
+    <div class="pt">🧑 호스트 세금 설정</div>
+    <div class="igrid">
+      <div class="ig">
+        <label>필요경비율 (사업소득 공제)</label>
+        <div class="ir co">
+          <input type="number" id="host-expense-rate" value="65" min="0" max="90" step="5" oninput="calc()">
+          <span class="iu">%</span>
+        </div>
+      </div>
+      <div class="ig">
+        <label>호스트 기타 소득 (연간)</label>
+        <div class="ir co">
+          <input type="number" id="host-other-inc" value="0" step="1000000" oninput="calc()">
+          <span class="iu">원</span>
+        </div>
+      </div>
+    </div>
+    <div class="pst" style="margin-top:12px">부가가치세 유형</div>
+    <div class="tab-row" id="vat-tabs">
+      <button class="tab-btn on-co" onclick="setVatType('simplified',this)">간이과세자 (숙박업 4%)</button>
+      <button class="tab-btn" onclick="setVatType('general',this)">일반과세자 (10%)</button>
+    </div>
+    <div id="host-general-vat-panel" style="display:none;margin-top:10px">
+      <div class="ig">
+        <label>매입세액공제 (연간)</label>
+        <div class="ir co">
+          <input type="number" id="host-input-vat" value="0" step="100000" oninput="calc()">
+          <span class="iu">원</span>
+        </div>
+      </div>
+    </div>
+    <div class="info-box wd-bg" style="margin-top:10px">
+      <strong>간이과세자</strong>: 연 공급가액 8,000만원 미만. 숙박업 부가가치율 40% × 10% = 실질 약 4%.<br>
+      <strong>일반과세자</strong>: 8,000만원 이상. 총 등록 매출의 10% − 매입세액 공제.
+    </div>
+  </div>
+
   <!-- 결과 -->
   <div id="result-section" style="display:none">
+
+    <!-- 법인 결과 -->
+    <div class="section-divider">
+      <div class="section-divider-line"></div>
+      <div class="section-divider-label">🏢 법인 세금 분석</div>
+      <div class="section-divider-line"></div>
+    </div>
     <div id="hero"></div>
     <div class="panel" id="tax-panel"></div>
+
+    <!-- 호스트 결과 -->
+    <div id="host-result-wrap" style="display:none">
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-label">🧑 호스트 세금 분석</div>
+        <div class="section-divider-line"></div>
+      </div>
+      <div id="host-hero"></div>
+      <div class="panel" id="host-tax-panel"></div>
+    </div>
+
     <div class="footnote">
       ※ 통합 계산은 운영대행·호스텔이 <strong>하나의 법인</strong>으로 운영될 때의 세금입니다.<br>
-      ※ 개별 계산기의 결과와 다를 수 있습니다 (법인세 누진 구간 차이).<br>
       ※ 법인세: 2억 이하 9%, 초과분 19% + 지방소득세 10%.<br>
-      ※ 배당소득세: 금융소득 2천만원 이하 15.4%, 초과분 종합과세.
+      ※ 배당소득세: 금융소득 2천만원 이하 15.4%, 초과분 종합과세.<br>
+      ※ 호스트 종합소득세: 7구간 누진세율. 필요경비율은 숙박업 단순경비율 기준으로 조정하세요.<br>
+      ※ 부가세 간이과세: 숙박업 부가가치율 40% 적용. 실제 세액은 공제 항목에 따라 달라질 수 있습니다.
     </div>
   </div>
 
@@ -125,6 +190,7 @@
 <script>
 let agData = null, hsData = null;
 let payout = 'div';
+let vatType = 'simplified';
 
 function reload() {
   agData = Store.load('agency');
@@ -136,11 +202,13 @@ function reload() {
 function renderStatus() {
   const el = document.getElementById('data-status');
   const hasAny = agData || hsData;
+  const hasHostData = agData && agData.computed?.hostNetAnnual != null;
 
   if (!hasAny) {
     el.innerHTML = '<div class="no-data-box">저장된 데이터가 없습니다. 각 계산기에서 저장 후 다시 확인하세요.</div>';
     document.getElementById('profit-panel').style.display = 'none';
     document.getElementById('payout-panel').style.display = 'none';
+    document.getElementById('host-settings-panel').style.display = 'none';
     document.getElementById('result-section').style.display = 'none';
     document.getElementById('no-data-guide').style.display = '';
     return;
@@ -149,6 +217,7 @@ function renderStatus() {
   document.getElementById('no-data-guide').style.display = 'none';
   document.getElementById('profit-panel').style.display = '';
   document.getElementById('payout-panel').style.display = '';
+  document.getElementById('host-settings-panel').style.display = hasHostData ? '' : 'none';
 
   let html = '';
   if (agData) {
@@ -181,6 +250,14 @@ function renderStatus() {
   el.innerHTML = html;
 }
 
+function setVatType(t, btn) {
+  vatType = t;
+  document.querySelectorAll('#vat-tabs .tab-btn').forEach(b => b.className = 'tab-btn');
+  btn.className = 'tab-btn on-co';
+  document.getElementById('host-general-vat-panel').style.display = t === 'general' ? '' : 'none';
+  calc();
+}
+
 function setPayout(m) {
   payout = m;
   document.getElementById('ri-div').className = 'radio-item' + (m==='div' ? ' sel-co' : '');
@@ -192,8 +269,9 @@ function setPayout(m) {
 function calc() {
   if (!agData && !hsData) return;
 
-  const agProfit = agData ? (agData.computed?.preTaxProfit || 0) : 0;
-  const hsProfit = hsData ? (hsData.computed?.profAn || 0)      : 0;
+  // ── 법인 계산 ──
+  const agProfit    = agData ? (agData.computed?.preTaxProfit || 0) : 0;
+  const hsProfit    = hsData ? (hsData.computed?.profAn || 0)       : 0;
   const totalPreTax = agProfit + hsProfit;
 
   document.getElementById('profit-items').innerHTML = `
@@ -204,7 +282,7 @@ function calc() {
   const parts = [agData && '운영대행', hsData && '호스텔'].filter(Boolean);
   document.getElementById('total-pretax-sub').textContent = parts.join(' + ') + ' 합산';
 
-  const salary   = +document.getElementById('salary').value   || 0;
+  const salary   = +document.getElementById('salary').value    || 0;
   const otherInc = +document.getElementById('other-inc').value || 0;
   const tx = calcTakeHome(totalPreTax, payout, salary, otherInc);
 
@@ -212,7 +290,7 @@ function calc() {
 
   document.getElementById('hero').innerHTML = `
     <div class="hero-card co">
-      <div class="hero-eyebrow">법인 통합 — 연간 최종 수취액</div>
+      <div class="hero-eyebrow">법인 통합 — 연간 최종 수취액 (대표이사)</div>
       <div class="hero-amount">${won(Math.max(0, tx.takeHome))}</div>
       <div class="hero-sub">
         ${parts.join(' + ')} 합산 &nbsp;|&nbsp; ${payout==='div'?'배당':'급여'} 방식
@@ -225,7 +303,7 @@ function calc() {
     </div>`;
 
   document.getElementById('tax-panel').innerHTML = `
-    <div class="pt">🏦 통합 세금 시뮬레이션</div>
+    <div class="pt">🏦 법인 세금 시뮬레이션</div>
     ${agData?`<div class="li"><span class="ll">운영대행 과세이익</span><span class="lv ag">${won(agProfit)}</span></div>`:''}
     ${hsData?`<div class="li"><span class="ll">호스텔 영업이익</span><span class="lv hs">${won(hsProfit)}</span></div>`:''}
     <div class="li sub"><span class="ll">법인 합산 세전 이익</span><span class="lv">${won(totalPreTax)}</span></div>
@@ -248,6 +326,82 @@ function calc() {
     `}
     <div class="li" style="margin-top:4px"><span class="ll">총 세금 부담 (법인세+개인세)</span><span class="lv ng">${won(tx.ct + tx.personalTax + tx.ins)}</span></div>
     <div class="li"><span class="ll">실효 수익률 (세전 이익 대비 수취)</span><span class="lv">${totalPreTax>0?(Math.max(0,tx.takeHome)/totalPreTax*100).toFixed(1):0}%</span></div>`;
+
+  // ── 호스트 세금 계산 ──
+  const hasHostData = agData && agData.computed?.hostNetAnnual != null;
+  const hostWrap = document.getElementById('host-result-wrap');
+
+  if (hasHostData) {
+    const hostGross     = agData.computed.hostGrossAnnual     || 0;
+    const hostNetBefore = agData.computed.hostNetBeforeAgency || 0;
+    const agencyFee     = agData.computed.agencyIncome        || 0;
+    const hostNet       = agData.computed.hostNetAnnual;
+
+    const expenseRate   = (+document.getElementById('host-expense-rate').value || 65) / 100;
+    const hostOtherInc  = +document.getElementById('host-other-inc').value || 0;
+    const hostBizInc    = Math.max(0, hostNet * (1 - expenseRate));
+
+    // 종합소득세 — incomeTax()는 이미 지방소득세(×1.1) 포함
+    const incTaxBase      = hostBizInc + hostOtherInc;
+    const incTaxOtherOnly = Math.max(0, incomeTax(hostOtherInc));
+    const hostITTotal     = Math.max(0, incomeTax(incTaxBase) - incTaxOtherOnly); // 지방세 포함
+    const hostIT          = hostITTotal / 1.1;            // 종합소득세 본세
+    const hostLocalIT     = hostITTotal - hostIT;         // 지방소득세 10%
+
+    // 부가가치세
+    let hostVat, vatDesc;
+    if (vatType === 'simplified') {
+      hostVat = hostGross * 0.04; // 숙박업 부가가치율 40% × 10%
+      vatDesc = '간이과세 — 숙박업 부가가치율 40% × 10% ≈ 4%';
+    } else {
+      const inputVat = +document.getElementById('host-input-vat').value || 0;
+      hostVat = Math.max(0, hostGross * 0.1 - inputVat);
+      vatDesc = `일반과세 — 매출 10%(${won(hostGross * 0.1)}) − 매입세액(${won(inputVat)})`;
+    }
+
+    const hostTakeHome = hostNet - hostITTotal - hostVat;
+
+    hostWrap.style.display = '';
+
+    document.getElementById('host-hero').innerHTML = `
+      <div class="hero-card" style="background:linear-gradient(135deg,#064e3b,#065f46)">
+        <div class="hero-eyebrow" style="color:#6ee7b7">호스트 — 연간 최종 수취액</div>
+        <div class="hero-amount" style="color:#fff">${won(Math.max(0, hostTakeHome))}</div>
+        <div class="hero-sub" style="color:#a7f3d0">
+          ${agData.units?.length||0}개 숙소 · 종합소득세 + 부가가치세 차감 후
+        </div>
+        <div class="hero-grid">
+          <div class="hero-cell"><div class="hero-cell-label" style="color:#6ee7b7">호스트 실수입</div><div class="hero-cell-val" style="color:#fff">${won(hostNet)}</div></div>
+          <div class="hero-cell"><div class="hero-cell-label" style="color:#6ee7b7">종합소득세 합계</div><div class="hero-cell-val" style="color:#fca5a5">${won(hostITTotal)}</div></div>
+          <div class="hero-cell"><div class="hero-cell-label" style="color:#6ee7b7">부가가치세</div><div class="hero-cell-val" style="color:#fca5a5">${won(hostVat)}</div></div>
+        </div>
+      </div>`;
+
+    document.getElementById('host-tax-panel').innerHTML = `
+      <div class="pt">🧑 호스트 세금 시뮬레이션</div>
+      <div class="li"><span class="ll">연간 총 등록 매출 (공급가액)</span><span class="lv">${won(hostGross)}</span></div>
+      <div class="li"><span class="ll">플랫폼 수수료 차감</span><span class="lv ng">−${won(hostGross - hostNetBefore)}</span></div>
+      <div class="li"><span class="ll">법인 대행 수수료 차감 (${agData.agencyRate||0}%)</span><span class="lv ng">−${won(agencyFee)}</span></div>
+      <div class="li sub"><span class="ll">호스트 실수입 (수입금액)</span><span class="lv">${won(hostNet)}</span></div>
+      <div class="li"><span class="ll">필요경비 공제 (${Math.round(expenseRate*100)}%)</span><span class="lv ng">−${won(hostNet * expenseRate)}</span></div>
+      ${hostOtherInc > 0 ? `<div class="li"><span class="ll">기타 소득 합산</span><span class="lv ps">+${won(hostOtherInc)}</span></div>` : ''}
+      <div class="li sub"><span class="ll">종합과세 기준금액 (사업소득금액)</span><span class="lv">${won(incTaxBase)}</span></div>
+      <div class="li"><span class="ll">종합소득세</span><span class="lv ng">−${won(hostIT)}</span></div>
+      <div class="li"><span class="ll">지방소득세 (10%)</span><span class="lv ng">−${won(hostLocalIT)}</span></div>
+      <div class="li sub"><span class="ll">소득세 합계</span><span class="lv ng">−${won(hostITTotal)}</span></div>
+      <div class="li"><span class="ll">부가가치세</span><span class="lv ng">−${won(hostVat)}</span></div>
+      <div class="li" style="font-size:10px;color:var(--ts);padding:4px 0 8px">${vatDesc}</div>
+      <div class="li total" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #6ee7b7">
+        <span class="ll">호스트 연간 최종 수취액</span>
+        <span class="lv" style="color:#059669">${won(Math.max(0, hostTakeHome))}</span>
+      </div>
+      <div class="li"><span class="ll">월 평균 수취액</span><span class="lv" style="color:#059669">${won(Math.max(0, hostTakeHome)/12)}</span></div>
+      <div class="li" style="margin-top:4px"><span class="ll">총 세금 부담 (소득세+부가세)</span><span class="lv ng">${won(hostITTotal + hostVat)}</span></div>
+      <div class="li"><span class="ll">실효 수익률 (실수입 대비 수취)</span><span class="lv">${hostNet>0?(Math.max(0,hostTakeHome)/hostNet*100).toFixed(1):0}%</span></div>`;
+
+  } else {
+    hostWrap.style.display = 'none';
+  }
 }
 
 // 초기화

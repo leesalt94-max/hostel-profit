@@ -85,6 +85,7 @@
     <div id="hero"></div>
     <div class="panel" id="unit-rev-panel"></div>
     <div class="panel" id="corp-panel"></div>
+    <div class="panel" id="host-panel"></div>
     <div class="footnote">
       ※ 주중 월 21.74박 (5/7×30.44), 주말 월 8.70박 (2/7×30.44) 기준.<br>
       ※ 대행 수수료는 플랫폼 수수료 차감 후 호스트 순수령액 기준입니다.<br>
@@ -334,10 +335,12 @@ function calc() {
     return { name: u.name, grossMo, netMo, grossAnnual: grossMo*12, netAnnual: netMo*12, fee };
   });
 
-  const totalNetAnnual = unitResults.reduce((s, r) => s + r.netAnnual, 0);
-  const agencyIncome   = totalNetAnnual * agRate;
-  const corpCostAnnual = corpCostMo * 12;
-  const preTaxProfit   = agencyIncome - corpCostAnnual;
+  const totalGrossAnnual = unitResults.reduce((s, r) => s + r.grossAnnual, 0);
+  const totalNetAnnual   = unitResults.reduce((s, r) => s + r.netAnnual,   0);
+  const agencyIncome     = totalNetAnnual * agRate;
+  const hostNetAnnual    = totalNetAnnual - agencyIncome; // 대행 수수료까지 차감한 호스트 실수입
+  const corpCostAnnual   = corpCostMo * 12;
+  const preTaxProfit     = agencyIncome - corpCostAnnual;
 
   document.getElementById('result-section').style.display = '';
 
@@ -373,10 +376,26 @@ function calc() {
     <div class="pt">📋 법인 연간 손익</div>
     <div class="li"><span class="ll">대행 수수료 수입</span><span class="lv ag">${won(agencyIncome)}</span></div>
     <div class="li"><span class="ll">법인 유지비 (월 ${won(corpCostMo)} × 12)</span><span class="lv ng">−${won(corpCostAnnual)}</span></div>
-    <div class="li total ag-bg"><span class="ll">법인 세전 이익</span><span class="lv">${won(Math.max(0, preTaxProfit))}</span></div>
+    <div class="li total ag-bg"><span class="ll">법인 세전 이익</span><span class="lv">${won(Math.max(0, preTaxProfit))}</span></div>`;
+
+  // 호스트 실수입 패널
+  const hostRows = unitResults.map(r => {
+    const hNet = r.netAnnual * (1 - agRate);
+    return `<div class="li">
+      <span class="ll">${escH(r.name)} <span style="font-size:10px;color:var(--tm)">(플랫폼 ${(r.fee*100).toFixed(1)}% + 대행 ${Math.round(agRate*100)}% 차감)</span></span>
+      <span class="lv">${won(hNet)}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('host-panel').innerHTML = `
+    <div class="pt">🧑 호스트 실수입 (플랫폼+대행 수수료 차감 후)</div>
+    ${hostRows}
+    <div class="li sub"><span class="ll">호스트 합산 연간 실수입</span><span class="lv">${won(hostNetAnnual)}</span></div>
+    <div class="li" style="margin-top:8px"><span class="ll">연간 총 등록 매출</span><span class="lv ag">${won(totalGrossAnnual)}</span></div>
+    <div class="li"><span class="ll">플랫폼 수수료 합계</span><span class="lv ng">−${won(totalGrossAnnual - totalNetAnnual)}</span></div>
+    <div class="li"><span class="ll">법인 대행 수수료 (${Math.round(agRate*100)}%)</span><span class="lv ng">−${won(agencyIncome)}</span></div>
     <div style="margin-top:12px">
       <a href="combined.html" class="go-combined">
-        <span>💡 배당·급여 세금 및 최종 수취액 계산하기</span>
+        <span>💡 법인·호스트 세금 통합 계산하기</span>
         <span class="arr">→</span>
       </a>
     </div>`;
@@ -390,7 +409,12 @@ function calc() {
     })),
     agencyRate: Math.round(agRate * 100),
     corpCostMo,
-    computed: { agencyIncome, corpCostAnnual, preTaxProfit },
+    computed: {
+      agencyIncome, corpCostAnnual, preTaxProfit,
+      hostGrossAnnual: totalGrossAnnual,
+      hostNetBeforeAgency: totalNetAnnual,
+      hostNetAnnual,
+    },
   });
 }
 
