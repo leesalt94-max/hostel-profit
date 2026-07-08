@@ -114,6 +114,25 @@
         </div>
       </div>
     </div>
+
+    <!-- 법인 부가가치세 -->
+    <div class="psec">
+      <div class="pst">법인 부가가치세 <span style="font-weight:400;color:var(--tm);font-size:10.5px">(일반과세자 기준 10%)</span></div>
+      <div id="corp-vat-preview" style="font-size:11px;color:var(--ts);margin-bottom:8px;line-height:1.6"></div>
+      <div class="igrid">
+        <div class="ig">
+          <label>매입세액공제 (연간)</label>
+          <div class="ir co">
+            <input type="number" id="corp-input-vat" value="0" step="100000" oninput="calc()">
+            <span class="iu">원</span>
+          </div>
+        </div>
+      </div>
+      <div class="info-box we-bg" style="margin-top:8px">
+        법인 매출(대행수수료 + 호스텔 매출)의 10%를 부가세로 납부합니다.<br>
+        운영비 등 세금계산서 수취분을 매입세액공제로 입력하면 차감됩니다.
+      </div>
+    </div>
   </div>
 
   <!-- ─── 호스트 섹션 ─── -->
@@ -224,6 +243,7 @@
       ※ 법인세: 2억 이하 9%, 초과분 19% + 지방소득세 10%. 이월결손금 적용 시 0원.<br>
       ※ 배당소득세: 금융소득 2천만원 이하 15.4%, 초과분 종합과세.<br>
       ※ 호스트 기준경비율: 수입금액 = 플랫폼 수수료 차감 후 수령액. 대행수수료·청구경비는 주요경비에 포함.<br>
+      ※ 법인 부가가치세: (대행수수료+호스텔매출)×10% − 매입세액공제. 배당·급여 수취액에서 차감됨.<br>
       ※ 본 계산기는 참고용이며, 정확한 세금은 세무사 상담을 권장합니다.
     </div>
   </div>
@@ -374,6 +394,24 @@ function calc() {
   const otherInc = +document.getElementById('other-inc').value || 0;
   const tx = calcTakeHome(totalPreTax, payout, salary, otherInc, noCorpTax);
 
+  // 법인 부가가치세
+  const agVatBase       = agData ? (agData.computed?.agencyIncome || 0) : 0;
+  const hsGrossAnnual   = hsData ? ((hsData.computed?.grossMo || 0) * 12) : 0;
+  const corpOutputVat   = (agVatBase + hsGrossAnnual) * 0.1;
+  const corpInputVatDeduct = +document.getElementById('corp-input-vat').value || 0;
+  const corpNetVat      = Math.max(0, corpOutputVat - corpInputVatDeduct);
+  // 유보 모드는 법인세/VAT가 법인 내부에서 처리 → 개인 수취(급여)는 영향 없음
+  const finalTakeHome   = payout === 'ret'
+    ? Math.max(0, tx.takeHome)
+    : Math.max(0, tx.takeHome - corpNetVat);
+
+  // 매출세액 미리보기 업데이트
+  document.getElementById('corp-vat-preview').innerHTML =
+    `예상 매출세액: <strong>${won(corpOutputVat)}</strong>` +
+    (agVatBase > 0 ? ` (대행수수료 ${won(agVatBase)}×10%)` : '') +
+    (hsGrossAnnual > 0 ? ` + (호스텔매출 ${won(hsGrossAnnual)}×10%)` : '') +
+    ` &nbsp;→ 납부세액: <strong style="color:var(--red)">${won(corpNetVat)}</strong>`;
+
   document.getElementById('result-section').style.display = '';
 
   const corpTaxBadge = noCorpTax ? '<span class="no-corp-tax-badge">이월결손금 적용</span>' : '';
@@ -381,7 +419,7 @@ function calc() {
   document.getElementById('hero').innerHTML = `
     <div class="hero-card co">
       <div class="hero-eyebrow">법인 통합 — 연간 최종 수취액 (대표이사${payout==='ret'?' · 급여만':''})</div>
-      <div class="hero-amount">${won(Math.max(0, tx.takeHome))}</div>
+      <div class="hero-amount">${won(finalTakeHome)}</div>
       <div class="hero-sub">
         ${parts.join(' + ')} 합산 &nbsp;|&nbsp; ${payout==='div'?'배당':payout==='ret'?'법인유보':'급여'} 방식
         ${noCorpTax ? ' &nbsp;|&nbsp; 법인세 0원' : ''}
@@ -389,7 +427,7 @@ function calc() {
       <div class="hero-grid">
         <div class="hero-cell"><div class="hero-cell-label">합산 세전 이익</div><div class="hero-cell-val">${won(totalPreTax)}</div></div>
         <div class="hero-cell"><div class="hero-cell-label">법인세${noCorpTax?' (면제)':''}</div><div class="hero-cell-val">${won(tx.ct)}</div></div>
-        <div class="hero-cell"><div class="hero-cell-label">개인 세금+보험</div><div class="hero-cell-val">${won(tx.personalTax + tx.ins)}</div></div>
+        <div class="hero-cell"><div class="hero-cell-label">부가세+개인세</div><div class="hero-cell-val">${won(corpNetVat + tx.personalTax + tx.ins)}</div></div>
       </div>
     </div>`;
 
@@ -408,25 +446,37 @@ function calc() {
     <div class="li sub"><span class="ll">법인 세후 이익 (배당 가능액)</span><span class="lv">${won(tx.afterCorp)}</span></div>
     ${payout==='div'?`
     <div class="li"><span class="ll">배당소득세 (15.4% 또는 종합과세)</span><span class="lv ng">−${won(tx.personalTax)}</span></div>
-    <div class="li total co-bg"><span class="ll">연간 최종 수취액 (배당)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
-    <div class="li"><span class="ll">월 평균 수취액</span><span class="lv co">${won(Math.max(0,tx.takeHome)/12)}</span></div>
+    <div class="li sub"><span class="ll">개인 수취액 소계 (부가세 전)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
     `:payout==='ret'?`
-    <div class="li" style="background:#f0fdf4;border-radius:8px;padding:10px 14px;margin:6px 0"><span class="ll" style="color:#166534;font-weight:700">법인 유보금 (당기 적립)</span><span class="lv" style="color:#16a34a;font-weight:700">${won(tx.afterCorp)}</span></div>
     <div class="li"><span class="ll">대표이사 급여</span><span class="lv">${won(salary)}</span></div>
     <div class="li"><span class="ll">근로소득세 (지방세 포함)</span><span class="lv ng">−${won(tx.personalTax)}</span></div>
     <div class="li"><span class="ll">4대보험 개인분</span><span class="lv ng">−${won(tx.ins)}</span></div>
-    <div class="li total co-bg"><span class="ll">연간 최종 수취액 (급여만)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
-    <div class="li"><span class="ll">월 평균 수취액 (급여 기준)</span><span class="lv co">${won(Math.max(0,tx.takeHome)/12)}</span></div>
+    <div class="li sub"><span class="ll">급여 수취액 소계 (부가세 별도)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
     `:`
     <div class="li"><span class="ll">대표이사 급여</span><span class="lv">${won(salary)}</span></div>
     <div class="li"><span class="ll">근로소득세 (지방세 포함)</span><span class="lv ng">−${won(tx.personalTax)}</span></div>
     <div class="li"><span class="ll">4대보험 개인분</span><span class="lv ng">−${won(tx.ins)}</span></div>
     ${tx.afterCorp>0?`<div class="li"><span class="ll">법인 잔여이익 배당 실수령</span><span class="lv ps">+${won(tx.afterCorp - dividendTax(tx.afterCorp, salary))}</span></div>`:''}
-    <div class="li total co-bg"><span class="ll">연간 최종 수취액 (급여+배당)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
-    <div class="li"><span class="ll">월 평균 수취액</span><span class="lv co">${won(Math.max(0,tx.takeHome)/12)}</span></div>
+    <div class="li sub"><span class="ll">개인 수취액 소계 (부가세 전)</span><span class="lv">${won(Math.max(0,tx.takeHome))}</span></div>
     `}
-    <div class="li" style="margin-top:4px"><span class="ll">총 세금 부담 (법인세+개인세)</span><span class="lv ng">${won(tx.ct + tx.personalTax + tx.ins)}</span></div>
-    <div class="li"><span class="ll">실효 수익률 (세전 이익 대비 수취)</span><span class="lv">${totalPreTax>0?(Math.max(0,tx.takeHome)/totalPreTax*100).toFixed(1):0}%</span></div>`;
+    <div style="margin-top:12px;padding-top:12px;border-top:1.5px solid var(--dv)">
+      <div class="pst" style="margin-bottom:8px">법인 부가가치세 납부</div>
+      ${agVatBase > 0 ? `<div class="li"><span class="ll">대행수수료 매출세액 (${won(agVatBase)}×10%)</span><span class="lv">${won(agVatBase * 0.1)}</span></div>` : ''}
+      ${hsGrossAnnual > 0 ? `<div class="li"><span class="ll">호스텔 매출세액 (${won(hsGrossAnnual)}×10%)</span><span class="lv">${won(hsGrossAnnual * 0.1)}</span></div>` : ''}
+      <div class="li sub"><span class="ll">매출세액 합계</span><span class="lv">${won(corpOutputVat)}</span></div>
+      ${corpInputVatDeduct > 0 ? `<div class="li"><span class="ll">매입세액공제</span><span class="lv ps">−${won(corpInputVatDeduct)}</span></div>` : ''}
+      <div class="li sub"><span class="ll">법인 부가세 납부액</span><span class="lv ng">−${won(corpNetVat)}</span></div>
+    </div>
+    ${payout==='ret'?`
+    <div class="li" style="background:#f0fdf4;border-radius:8px;padding:10px 14px;margin:8px 0">
+      <span class="ll" style="color:#166534;font-weight:700">법인 유보금 (부가세 차감 후)</span>
+      <span class="lv" style="color:#16a34a;font-weight:700">${won(Math.max(0, tx.afterCorp - corpNetVat))}</span>
+    </div>
+    `:''}
+    <div class="li total co-bg" style="margin-top:8px"><span class="ll">연간 최종 수취액 (부가세 반영)</span><span class="lv">${won(finalTakeHome)}</span></div>
+    <div class="li"><span class="ll">월 평균 수취액</span><span class="lv co">${won(finalTakeHome/12)}</span></div>
+    <div class="li" style="margin-top:4px"><span class="ll">총 세금 부담 (법인세+개인세+부가세)</span><span class="lv ng">${won(tx.ct + tx.personalTax + tx.ins + corpNetVat)}</span></div>
+    <div class="li"><span class="ll">실효 수익률 (세전 이익 대비 수취)</span><span class="lv">${totalPreTax>0?(finalTakeHome/totalPreTax*100).toFixed(1):0}%</span></div>`;
 
   // ── 호스트 세금 계산 (기준경비율 방식) ──
   const hasHostData = agData && agData.computed?.hostNetAnnual != null;
