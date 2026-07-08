@@ -481,6 +481,7 @@ function saveData() {
         if (idx != null) document.querySelectorAll('#plat-tabs .tab-btn')[idx].className = 'tab-btn on-hs';
         document.getElementById('mix-panel').style.display = saved.platform === 'mix' ? '' : 'none';
       }
+      updateWePrices(); // 저장된 wdPrices·weMult 복원 후 주말 단가 재계산
       calc();
     }, 50);
   }
