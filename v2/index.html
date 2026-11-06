@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>숙소 법인 수익 시뮬레이터 v2</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>숙소 법인 수익 시뮬레이터</h1>
+      <div class="sub">신사 호스텔 직영 + 온재 위탁 · 에어비앤비 게스트 결제가 기준 · <a href="../new/index.html">이전 계산기</a></div>
+    </div>
+    <span class="sp"></span>
+    <div class="seg" id="basis">
+      <button data-basis="first">첫 12개월</button>
+      <button data-basis="steady">안정기 1년</button>
+    </div>
+    <button class="btn" id="share">링크 복사</button>
+    <button class="btn" id="reset">초기화</button>
+  </header>
+
+  <div class="tabs" id="tabs">
+    <button data-tab="in">① 사업장·객실 입력</button>
+    <button data-tab="res">② 결과</button>
+    <button data-tab="cmp">③ 시나리오 비교</button>
+  </div>
+
+  <section id="tab-in">
+    <div class="props" id="props"></div>
+    <div id="editor"></div>
+    <div class="grid2">
+      <div class="card" id="corp"></div>
+      <div class="card" id="plan"></div>
+    </div>
+  </section>
+
+  <section id="tab-res" class="hide"></section>
+  <section id="tab-cmp" class="hide"></section>
+
+  <div class="note">
+    ※ 평일 = 일~목 밤(월 일수 × 5/7), 주말 = 금·토 밤(× 2/7). 게스트 결제가에 부가세 포함 → 매출세액 = 결제가 × 10/110. 비용은 부가세 포함 금액으로 입력하고, '세금계산서' 체크한 비용만 매입세액(× 10/110)을 공제해요.<br>
+    ※ 법인세 2억 이하 9%·초과 19%(지방세 포함 ×1.1), 종합소득세·배당세·4대보험(개인분)은 이전 계산기와 같은 방식. 대표 급여의 회사 부담 4대보험·OTA 해외수수료 관련 세금은 넣지 않은 참고용 계산이에요.
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="calc.js"></script>
+<script src="defaults.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
