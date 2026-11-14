@@ -8,6 +8,11 @@
       "source": "/",
       "destination": "/new/index.html",
       "permanent": false
+    },
+    {
+      "source": "/v2",
+      "destination": "/v2/",
+      "permanent": false
     }
   ]
 }
